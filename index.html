@@ -152,6 +152,9 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); font-si
 .content { flex:1; padding:24px; }
 .panel { display:none; }
 .panel.active { display:block; }
+#panel-directorio.active { display:block; }
+#panel-directorio.active > div:first-child { display:flex; height:calc(100vh - 120px); overflow:hidden; }
+.panel.active { display:block; }
 
 /* ── KPI GRID ───────────────────────────── */
 .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
@@ -607,7 +610,8 @@ textarea { resize:vertical; min-height:70px; }
         </div>
 
         <!-- ══ DIRECTORIO ══ -->
-        <div id="panel-directorio" class="panel" style="display:flex;gap:0;padding:0;overflow:hidden">
+        <div id="panel-directorio" class="panel">
+          <div style="display:flex;gap:0;height:100%;overflow:hidden;margin:-16px">
           <!-- Columna principal -->
           <div style="flex:1;min-width:0;overflow-y:auto;padding:16px">
           <div class="metrics-bar" id="dir-metrics" style="margin-bottom:12px"></div>
@@ -654,7 +658,7 @@ textarea { resize:vertical; min-height:70px; }
           </div><!-- fin columna principal -->
 
           <!-- ══ PANEL DERECHO MERCADO ══ -->
-          <div id="dir-market-panel" style="width:260px;min-width:260px;background:var(--surface);border-left:0.5px solid var(--border);overflow-y:auto;padding:14px 12px;font-size:12px">
+          <div id="dir-market-panel" style="width:255px;min-width:255px;background:#F0F4FA;border-left:0.5px solid #D0DCF0;overflow-y:auto;padding:14px 12px;font-size:12px">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
               <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--muted);stroke-width:2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
               <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Mercado</span>
@@ -662,7 +666,7 @@ textarea { resize:vertical; min-height:70px; }
             </div>
 
             <!-- Oportunidad estimada -->
-            <div style="background:var(--navy);border-radius:10px;padding:14px;margin-bottom:12px;color:#fff">
+            <div style="background:linear-gradient(135deg,#1a3a6b 0%,#2563a8 100%);border-radius:10px;padding:14px;margin-bottom:12px;color:#fff">
               <div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Oportunidad estimada</div>
               <div id="mp-oport" style="font-size:28px;font-weight:600;line-height:1">$0M</div>
               <div style="font-size:10px;opacity:.6;margin-top:2px">MXN · basado en tiers</div>
@@ -703,7 +707,8 @@ textarea { resize:vertical; min-height:70px; }
             <!-- Inteligencia comercial -->
             <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px">Inteligencia Comercial</div>
             <div id="mp-intel" style="display:flex;flex-direction:column;gap:8px"></div>
-          </div>
+          </div><!-- fin panel mercado -->
+          </div><!-- fin wrapper flex -->
         </div><!-- fin panel-directorio -->
 
         <!-- ══ PIPELINE / PROSPECTOS ══ -->
