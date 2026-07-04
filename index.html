@@ -607,8 +607,10 @@ textarea { resize:vertical; min-height:70px; }
         </div>
 
         <!-- ══ DIRECTORIO ══ -->
-        <div id="panel-directorio" class="panel">
-          <div class="metrics-bar" id="dir-metrics"></div>
+        <div id="panel-directorio" class="panel" style="display:flex;gap:0;padding:0;overflow:hidden">
+          <!-- Columna principal -->
+          <div style="flex:1;min-width:0;overflow-y:auto;padding:16px">
+          <div class="metrics-bar" id="dir-metrics" style="margin-bottom:12px"></div>
           <div class="tbl-wrap">
             <div class="tbl-bar">
               <div class="search-wrap">
@@ -649,7 +651,60 @@ textarea { resize:vertical; min-height:70px; }
             </table>
             <div class="pagination" id="dir-pag"></div>
           </div>
-        </div>
+          </div><!-- fin columna principal -->
+
+          <!-- ══ PANEL DERECHO MERCADO ══ -->
+          <div id="dir-market-panel" style="width:260px;min-width:260px;background:var(--surface);border-left:0.5px solid var(--border);overflow-y:auto;padding:14px 12px;font-size:12px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--muted);stroke-width:2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Mercado</span>
+              <span id="mp-estado-label" style="font-size:11px;font-weight:500;color:var(--navy);margin-left:auto"></span>
+            </div>
+
+            <!-- Oportunidad estimada -->
+            <div style="background:var(--navy);border-radius:10px;padding:14px;margin-bottom:12px;color:#fff">
+              <div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Oportunidad estimada</div>
+              <div id="mp-oport" style="font-size:28px;font-weight:600;line-height:1">$0M</div>
+              <div style="font-size:10px;opacity:.6;margin-top:2px">MXN · basado en tiers</div>
+            </div>
+
+            <!-- Stats grid -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+              <div style="background:var(--bg);border-radius:8px;padding:10px 12px">
+                <div id="mp-total" style="font-size:22px;font-weight:600;color:var(--navy)">0</div>
+                <div style="font-size:10px;color:var(--muted)">en este estado</div>
+                <div style="font-size:10px;font-weight:500;color:var(--muted);margin-top:4px">PROSPECTOS</div>
+              </div>
+              <div style="background:var(--bg);border-radius:8px;padding:10px 12px">
+                <div id="mp-platino" style="font-size:22px;font-weight:600;color:#185FA5">0</div>
+                <div style="font-size:10px;color:var(--muted)">alta prioridad</div>
+                <div style="font-size:10px;font-weight:500;color:var(--muted);margin-top:4px">PLATINO</div>
+              </div>
+              <div style="background:var(--bg);border-radius:8px;padding:10px 12px">
+                <div id="mp-oro" style="font-size:22px;font-weight:600;color:#BA7517">0</div>
+                <div style="font-size:10px;color:var(--muted)">potencial alto</div>
+                <div style="font-size:10px;font-weight:500;color:var(--muted);margin-top:4px">ORO</div>
+              </div>
+              <div style="background:var(--bg);border-radius:8px;padding:10px 12px">
+                <div id="mp-clientes" style="font-size:22px;font-weight:600;color:#3B6D11">0</div>
+                <div style="font-size:10px;color:var(--muted)">activos</div>
+                <div style="font-size:10px;font-weight:500;color:var(--muted);margin-top:4px">CLIENTES</div>
+              </div>
+            </div>
+
+            <!-- Sectores dinamismo -->
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px">Sectores · Dinamismo 2026</div>
+            <div id="mp-sectores" style="margin-bottom:12px"></div>
+
+            <!-- Pipeline -->
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px">Pipeline</div>
+            <div id="mp-pipeline" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:12px;text-align:center"></div>
+
+            <!-- Inteligencia comercial -->
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px">Inteligencia Comercial</div>
+            <div id="mp-intel" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div><!-- fin panel-directorio -->
 
         <!-- ══ PIPELINE / PROSPECTOS ══ -->
         <div id="panel-prospectos" class="panel">
@@ -1227,19 +1282,19 @@ textarea { resize:vertical; min-height:70px; }
 </div>
 
 <!-- ════ MODAL: DIRECTORIO DETALLE ════ -->
-<div class="modal-overlay" id="modal-dir" style="align-items:flex-start;justify-content:flex-end;padding:12px">
-  <div class="modal" style="max-width:380px;max-height:calc(100vh - 24px);margin-top:0;border-radius:12px">
-    <div class="modal-hd" style="padding:14px 18px 12px">
+<div class="modal-overlay" id="modal-dir" style="align-items:flex-start;justify-content:flex-end;padding:8px">
+  <div class="modal" style="max-width:360px;width:360px;max-height:calc(100vh - 16px);margin:0;border-radius:12px;display:flex;flex-direction:column">
+    <div class="modal-hd" style="padding:12px 16px;flex-shrink:0">
       <div>
-        <div class="modal-title" id="dir-modal-title" style="font-size:14px">Prospecto</div>
+        <div class="modal-title" id="dir-modal-title" style="font-size:13px"></div>
         <div style="font-size:11px;color:var(--muted)" id="dir-modal-sub"></div>
       </div>
-      <button class="modal-close" onclick="closeModal('modal-dir')" style="font-size:20px;margin-left:8px">×</button>
+      <button class="modal-close" onclick="closeModal('modal-dir')" style="font-size:22px">×</button>
     </div>
-    <div class="modal-body" id="dir-modal-body" style="padding:14px 18px"></div>
-    <div class="modal-ft" style="padding:10px 18px;gap:6px">
-      <button class="btn-modal btn-save" id="dir-btn-crm" onclick="enviarAlCRM()" style="font-size:12px;padding:7px 14px">➕ Al pipeline</button>
-      <button class="btn-modal btn-cancel" onclick="closeModal('modal-dir')" style="font-size:12px;padding:7px 14px">Cerrar</button>
+    <div class="modal-body" id="dir-modal-body" style="padding:12px 16px;overflow-y:auto;flex:1"></div>
+    <div class="modal-ft" style="padding:10px 16px;gap:6px;flex-shrink:0">
+      <button class="btn-modal btn-save" id="dir-btn-crm" onclick="enviarAlCRM()" style="font-size:12px;padding:6px 12px">➕ Al pipeline</button>
+      <button class="btn-modal btn-cancel" onclick="closeModal('modal-dir')" style="font-size:12px;padding:6px 12px">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1276,7 +1331,7 @@ const USER_MAP  = Object.fromEntries(USERS.map(u=>[u.id, u]))
 let currentUser = null
 let pendingUser = null
 let allDir = [], prospectos = [], clientes = []
-let dirFiltered = [], dirPage = 1
+let dirFiltered = [], dirPage = 1, dirData = []
 const DIR_PAGE = 100
 let dirSortCol = 'id', dirSortAsc = true
 let misLeadsMode = false
@@ -1589,6 +1644,8 @@ function dirFilter(){
   dirPage=1
   renderDirPage()
   updateDirMetrics(dirFiltered)
+  dirData = dirFiltered
+  mpUpdate()
 }
 
 function dirSort(col){
@@ -2458,7 +2515,101 @@ function descargarPDF(id){
 }
 
 // ═══════════════════════════════════════════
-// CATÁLOGO DE PRODUCTOS
+// PANEL DE MERCADO (directorio derecho)
+// ═══════════════════════════════════════════
+const SECTOR_INTEL = {
+  'Alimentos':        {din:'Alta',color:'#3B6D11',productos:'Alcalinos + Ácidos CIP'},
+  'Bebidas':          {din:'Muy alta',color:'#185FA5',productos:'CIP + Membranas'},
+  'Farmacéutico':     {din:'Media-alta',color:'#534AB7',productos:'Membranas + Desinfectantes'},
+  'Hoteles':          {din:'Media',color:'#BA7517',productos:'Limpieza General'},
+  'Hospitales':       {din:'Selectiva',color:'#A32D2D',productos:'Desinfectantes ISO'},
+  'Institucional':    {din:'Selectiva',color:'#5F5E5A',productos:'Limpieza General'},
+  'Cárnicos':         {din:'Alta',color:'#A32D2D',productos:'CL Alka + Oxi Star'},
+  'Lácteos':          {din:'Alta',color:'#854F0B',productos:'Membranas + CIP'},
+}
+const TIER_VAL = {Platino:2500000,Oro:500000,Plata:150000,Bronce:30000}
+
+function mpUpdate(){
+  // Tomar los datos filtrados actuales del directorio
+  const estado = document.getElementById('dir-estado')?.value||''
+  const label = document.getElementById('mp-estado-label')
+  if(label) label.textContent = estado||'Nacional'
+
+  // Filtrar datos del directorio visibles
+  const leads = dirData ? dirData.filter(r=>{
+    if(estado && r.estado!==estado) return false
+    return true
+  }) : []
+
+  // KPIs
+  const total = leads.length
+  const platino = leads.filter(r=>r.tier==='Platino').length
+  const oro = leads.filter(r=>r.tier==='Oro').length
+  const clientes = leads.filter(r=>r.estatus==='Cliente').length
+
+  // Oportunidad estimada
+  const oport = leads.reduce((s,r)=>s+(TIER_VAL[r.tier]||0),0)
+  const optM = (oport/1000000).toFixed(0)
+
+  document.getElementById('mp-oport').textContent = `$${optM}M`
+  document.getElementById('mp-total').textContent = total.toLocaleString()
+  document.getElementById('mp-platino').textContent = platino.toLocaleString()
+  document.getElementById('mp-oro').textContent = oro.toLocaleString()
+  document.getElementById('mp-clientes').textContent = clientes.toLocaleString()
+
+  // Sectores
+  const sectCounts = {}
+  leads.forEach(r=>{ if(r.sector) sectCounts[r.sector]=(sectCounts[r.sector]||0)+1 })
+  const topSect = Object.entries(sectCounts).sort((a,b)=>b[1]-a[1]).slice(0,6)
+  const maxS = topSect[0]?.[1]||1
+  const mpSect = document.getElementById('mp-sectores')
+  if(mpSect) mpSect.innerHTML = topSect.map(([s,n])=>{
+    const info = SECTOR_INTEL[s]||{din:'Media',color:'#888'}
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <span style="font-size:11px;min-width:80px;color:var(--text)">${s}</span>
+      <div style="flex:1;height:3px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${Math.round(n/maxS*100)}%;background:${info.color};border-radius:3px"></div>
+      </div>
+      <span style="font-size:10px;min-width:18px;text-align:right;color:var(--muted)">${n}</span>
+      <span style="font-size:9px;padding:1px 5px;border-radius:99px;background:${info.color}20;color:${info.color};white-space:nowrap">${info.din}</span>
+    </div>`
+  }).join('')||'<span style="color:var(--muted);font-size:11px">Selecciona un estado</span>'
+
+  // Pipeline
+  const etapas = [{k:'Nuevo',c:'#888'},{k:'Contactado',c:'#185FA5'},{k:'Calificado',c:'#BA7517'},{k:'Cliente',c:'#3B6D11'}]
+  const mpPipe = document.getElementById('mp-pipeline')
+  if(mpPipe) mpPipe.innerHTML = etapas.map(e=>{
+    const n = leads.filter(r=>r.estatus===e.k).length
+    return `<div>
+      <div style="font-size:7px;color:${e.c};font-weight:600;margin-bottom:2px">${e.k.toUpperCase()}</div>
+      <div style="font-size:16px;font-weight:600;color:${e.c}">${n}</div>
+    </div>`
+  }).join('')
+
+  // Inteligencia comercial
+  const mpIntel = document.getElementById('mp-intel')
+  if(!mpIntel) return
+  const insights = []
+  if(topSect[0]) {
+    const s=topSect[0][0], info=SECTOR_INTEL[s]||{}
+    insights.push({icon:'⭐',txt:`<strong>${s}</strong> lidera con ${topSect[0][1]} prospectos. Producto: ${info.productos||'—'}`})
+  }
+  const sinContactar = leads.filter(r=>r.estatus==='Nuevo').length
+  if(sinContactar>0 && total>0)
+    insights.push({icon:'⚡',txt:`<strong>${sinContactar} sin contactar</strong> — ${Math.round(sinContactar/total*100)}% del ${estado||'total'} aún sin tocar.`})
+  if(platino>0)
+    insights.push({icon:'💎',txt:`<strong>${platino} Platino</strong>${estado?' en '+estado:''}. Visita prioritaria inmediata.`})
+
+  mpIntel.innerHTML = insights.map(i=>`
+    <div style="display:flex;gap:8px;align-items:flex-start;background:var(--bg);border-radius:7px;padding:8px 10px">
+      <span style="font-size:14px;flex-shrink:0">${i.icon}</span>
+      <span style="font-size:11px;color:var(--text);line-height:1.5">${i.txt}</span>
+    </div>`).join('')
+}
+
+// ═══════════════════════════════════════════
+// FIX MODAL DIRECTORIO COMPACTO
+// ═══════════════════════════════════════════
 // ═══════════════════════════════════════════
 let productos_cat = []
 
@@ -2885,7 +3036,7 @@ function renderPresupuesto(){
 async function sbPatch(table, id, data){
   const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
     method:'PATCH',
-    headers:{...SB_HEADERS,'Prefer':'return=minimal'},
+    headers:{...HDR,'Prefer':'return=minimal'},
     body: JSON.stringify(data)
   })
   if(!res.ok) throw new Error(await res.text())
