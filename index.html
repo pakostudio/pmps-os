@@ -3128,11 +3128,17 @@ async function fcGuardarAsesor(clave){
   if(err>0) showToast(`${ok} guardados, ${err} errores`,'⚠️')
   else showToast(`✅ ${ok} artículos guardados en Forecast`)
 }
+
+function fcRenderTablaAsesor(clave, items, canEdit, container){
   container.innerHTML = `
     <div class="tbl-wrap">
       <div class="tbl-bar">
         <div class="sec-title">${items[0]?.asesor_nombre||clave} — Forecast 2026</div>
         <span class="results-label">${items.length} artículos</span>
+        ${canEdit?`<button onclick="fcGuardarAsesor('${clave}')" id="fc-save-${clave}"
+          style="background:var(--green);color:#fff;border:none;border-radius:7px;padding:6px 14px;
+          font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);display:none">
+          💾 Guardar cambios</button>`:''}
       </div>
       <div style="overflow-x:auto">
         <table style="min-width:900px">
@@ -3151,11 +3157,13 @@ async function fcGuardarAsesor(clave){
                   const color = v>0?'var(--navy)':'var(--muted)'
                   return canEdit
                     ? `<td style="text-align:center;padding:3px"><input type="number" value="${v}" min="0" step="1"
+                        data-id="${r.id}" data-mes="${m}"
+                        oninput="fcMarkDirty('${clave}',this)"
                         onchange="fcCellChange('${r.id}','${m}',this.value,'${clave}')"
                         style="width:44px;text-align:center;padding:3px;border:1px solid var(--border2);border-radius:4px;font-size:11px;font-family:var(--mono);background:${v>0?'var(--surface2)':'var(--bg)'};color:${color}"></td>`
                     : `<td style="text-align:center;font-size:11px;color:${color}">${v||'—'}</td>`
                 }).join('')}
-                <td style="text-align:right;font-family:var(--mono);font-weight:500;font-size:12px">${tot}</td>
+                <td style="text-align:right;font-family:var(--mono);font-weight:500;font-size:12px" id="fc-tot-${r.id}">${tot}</td>
               </tr>`
             }).join('')}
           </tbody>
