@@ -1161,7 +1161,7 @@ let CLAVE_EQUIPO = 'menlun2026'; // Clave compartida — admin puede cambiarla
 
 // Claves individuales por usuario (admin puede cambiarlas)
 let CLAVES_LIVE = {
-  'Administrador': 'admin2026',  // PIN exclusivo del admin
+  'Administrador': '1234',  // PIN exclusivo del admin
   'José Carlos':   'menlun2026',
   'Ulises':        'menlun2026',
   'Rocío':         'menlun2026',
@@ -3222,9 +3222,7 @@ function togglePresGraficas(){
 // ═══════════════════════════════════════════
 // FORECAST 2026
 // ═══════════════════════════════════════════
-let forecast_data = []
-const MESES_FC = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
-const MESES_LABEL = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC']
+
 
 async function loadForecast(){
   if(forecast_data.length) { fcRenderGlobal(); return }
@@ -3446,7 +3444,6 @@ function fcRenderTablaAsesor(clave, items, canEdit, container){
 // ═══════════════════════════════════════════
 // PRESUPUESTO EDITABLE (admin)
 // ═══════════════════════════════════════════
-let presupuesto_data = []
 
 async function loadPresupuesto(){
   try {
