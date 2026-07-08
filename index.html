@@ -3624,20 +3624,28 @@ async function presUpdateReal(mes, id, valor){
 let nuevosCargados = {}
 
 function switchTabNuevo(panel) {
-  // Ocultar todos los tabs del v1
-  document.querySelectorAll('.tab-content').forEach(t => t.style.display='none')
+  // Ocultar todos los panels del v1 (usan clase 'active')
+  ;['dashboard','leads','clientes','reportes','admin'].forEach(t=>{
+    const p = document.getElementById('panel-'+t)
+    const n = document.getElementById('nav-'+t)
+    if(p) p.classList.remove('active')
+    if(n) n.classList.remove('active')
+  })
+
+  // Ocultar wraps de módulos nuevos
+  document.querySelectorAll('[id$="-wrap"][id^="tab-"]').forEach(t => t.style.display='none')
+
+  // Quitar activo de todos los nav
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
-  
-  // Mostrar el tab nuevo
+
+  // Mostrar el wrap del panel nuevo
   const wrap = document.getElementById('tab-'+panel+'-wrap')
-  if(wrap) wrap.style.display='block'
-  
+  if(wrap) wrap.style.display = 'block'
+
   // Marcar nav activo
-  const navId = 'nav-'+panel.replace(/-/g,'_')
-  const alt = 'nav-'+panel
-  const navEl = document.getElementById(navId) || document.getElementById(alt)
+  const navEl = document.getElementById('nav-'+panel.replace(/-/g,'_')) || document.getElementById('nav-'+panel)
   if(navEl) navEl.classList.add('active')
-  
+
   // Cargar datos si es la primera vez
   if(!nuevosCargados[panel]) {
     nuevosCargados[panel] = true
