@@ -293,6 +293,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <div style="font-size:11px;color:var(--muted)" id="sync-status"></div>
+      <div style="font-size:11px;color:var(--muted);margin-right:8px" id="header-datetime"></div>
       <div class="user-chip" onclick="doLogout()">
         <div class="user-avatar" id="header-avatar">JC</div>
         <div class="user-name" id="header-name">José Carlos</div>
@@ -1342,18 +1343,35 @@ function doLogin(){
     return;
   }
   document.getElementById('login-error').style.display = 'none';
-  currentUser = {name, initials};
+  currentUser = {name, initials, nombre: name, rol: name==='Administrador'?'admin':'vendedor'};
   document.getElementById('header-avatar').textContent = isAdmin() ? '⚙' : initials;
   document.getElementById('header-name').textContent = name;
   document.getElementById('dash-bienvenida').textContent = `Hola, ${name} 👋`;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  // Mostrar tab admin solo al administrador
-  document.getElementById('nav-admin').style.display = isAdmin() ? 'flex' : 'none';
-  // Admin no necesita ver sus tabs personales vacíos
-  document.getElementById('nav-dashboard').style.display = isAdmin() ? 'none' : 'flex';
-  document.getElementById('nav-leads').style.display = isAdmin() ? 'none' : 'flex';
-  document.getElementById('nav-clientes').style.display = isAdmin() ? 'none' : 'flex';
+  const esAdmin = isAdmin();
+  // Tabs CRM v1
+  document.getElementById('nav-admin').style.display     = esAdmin ? 'flex' : 'none';
+  document.getElementById('nav-dashboard').style.display = esAdmin ? 'none' : 'flex';
+  document.getElementById('nav-leads').style.display     = esAdmin ? 'none' : 'flex';
+  document.getElementById('nav-clientes').style.display  = esAdmin ? 'none' : 'flex';
+  // Tabs nuevos — solo admin
+  ['nav-forecast','nav-ventas-hist','nav-presupuesto'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = esAdmin ? 'flex' : 'none';
+  });
+  // Tabs nuevos — todos los usuarios
+  ['nav-catalogo','nav-equipos','nav-rep-fo'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'flex';
+  });
+  // Reloj en tiempo real
+  function reloj(){
+    const d = new Date();
+    const el = document.getElementById('header-datetime');
+    if(el) el.textContent = d.toLocaleDateString('es-MX',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  }
+  reloj(); setInterval(reloj,1000);
   cargarDatos();
 }
 document.getElementById('login-pin').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
