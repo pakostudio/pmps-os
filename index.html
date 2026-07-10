@@ -43,7 +43,7 @@ textarea{resize:vertical;min-height:70px}
 .btn-amber:hover{background:#6b3e08}
 
 /* APP */
-#app{display:none;min-height:100vh}
+#app{display:none}
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header-left{display:flex;align-items:center;gap:12px}
 .logo-mark{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px}
@@ -952,10 +952,36 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <option>Lavandería</option><option>Control Personal</option>
         <option>Mantenimiento de Planta</option><option>Especialidades</option>
       </select>
+      <button onclick="catExportExcel()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
+      <button onclick="catExportPDF()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
       <span class="results-label" id="cat-count">— productos</span>
     </div>
     <div id="cat-pills-row" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px"></div>
     <div id="cat-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px"></div>
+  </div>
+
+  <!-- Modal editar producto (admin) -->
+  <div id="modal-cat-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:center;justify-content:center;padding:8px">
+    <div style="background:#fff;border-radius:16px;width:440px;max-width:95vw;max-height:calc(100vh - 16px);overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:600">Editar producto</div>
+        <button onclick="document.getElementById('modal-cat-edit').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+      </div>
+      <div style="padding:16px 20px">
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Nombre</label>
+          <input type="text" id="cat-edit-nombre" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Familia</label>
+          <input type="text" id="cat-edit-familia" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Uso / Dosificación</label>
+          <input type="text" id="cat-edit-uso" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:4px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Descripción</label>
+          <textarea id="cat-edit-descripcion" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px;min-height:70px;resize:vertical"></textarea></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
+        <button onclick="document.getElementById('modal-cat-edit').style.display='none'" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
+        <button onclick="catSaveEdit()" style="padding:8px 16px;border-radius:8px;border:none;background:#1B3A6B;color:#fff;font-family:var(--font);font-weight:500;cursor:pointer">💾 Guardar</button>
+      </div>
+    </div>
   </div>
 
   <div id="tab-equipos-wrap" class="tab-content" style="display:none;padding:16px">
@@ -1070,7 +1096,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <input type="checkbox" id="fc-solo-datos" onchange="fcRenderGlobal()" style="width:14px;height:14px;margin:0">
           Solo artículos con datos
         </label>
-        <span style="font-size:11px;color:var(--muted);margin-left:auto">Para editar ve al tab de tu asesor ✎</span>
+        <button onclick="fcExportExcel()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
+        <button onclick="fcExportPDF()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
+        <span style="font-size:11px;color:var(--muted);margin-left:auto">✏️ Para editar cifras ve al tab de tu asesor</span>
       </div>
       <div id="fc-global-body"></div>
     </div>
@@ -1113,6 +1141,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input class="search-input" id="vh-search" placeholder="Buscar cliente..." oninput="vhFilter()">
       </div>
+      <button onclick="vhExportExcel()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
+      <button onclick="vhExportPDF()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
       <span class="results-label" id="vh-count">—</span>
     </div>
     <table style="width:100%;border-collapse:collapse">
@@ -1122,16 +1152,53 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">AÑO</th>
         <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">SECTOR</th>
         <th style="padding:8px 10px;text-align:right;font-size:11px;color:var(--muted)">TOTAL</th>
+        <th></th>
       </tr></thead>
       <tbody id="vh-tbody"></tbody>
     </table>
   </div>
 
+  <!-- Modal editar venta histórica (admin) -->
+  <div id="modal-vh-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:center;justify-content:center;padding:8px">
+    <div style="background:#fff;border-radius:16px;width:420px;max-width:95vw;max-height:calc(100vh - 16px);overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:600">Editar venta histórica</div>
+        <button onclick="document.getElementById('modal-vh-edit').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+      </div>
+      <div style="padding:16px 20px">
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Cliente</label>
+          <input type="text" id="vh-edit-cliente" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Asesor</label>
+            <input type="text" id="vh-edit-asesor" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Año</label>
+            <input type="number" id="vh-edit-anio" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Sector</label>
+            <input type="text" id="vh-edit-sector" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Total</label>
+            <input type="number" id="vh-edit-total" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
+        <button onclick="document.getElementById('modal-vh-edit').style.display='none'" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
+        <button onclick="vhSaveEdit()" style="padding:8px 16px;border-radius:8px;border:none;background:#1B3A6B;color:#fff;font-family:var(--font);font-weight:500;cursor:pointer">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="tab-presupuesto-wrap" class="tab-content" style="display:none;padding:16px">
     <div class="kpi-grid" id="pres-kpis" style="margin-bottom:16px"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-size:14px;font-weight:600">Cumplimiento mensual 2026 <span style="font-size:11px;font-weight:normal;color:var(--muted)">— edita REAL C'26 directo</span></div>
-      <button onclick="togglePresGraficas()" id="btn-pres-graficas" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">📊 Ver gráficas</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:14px;font-weight:600">Cumplimiento mensual 2026
+        <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:11px;font-weight:500;color:#1D9E75;margin-left:6px">✏️ Editable — columna REAL C'26</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="presExportExcel()" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
+        <button onclick="presExportPDF()" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
+        <button onclick="togglePresGraficas()" id="btn-pres-graficas" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">📊 Ver gráficas</button>
+      </div>
     </div>
     <div id="pres-tabla" style="overflow-x:auto;margin-bottom:16px"></div>
     <div id="pres-graficas-wrap" style="display:none">
@@ -1484,6 +1551,10 @@ function doLogout(){
 // NAVEGACIÓN
 // ══════════════════════════════════════════
 function switchTab(tab){
+  window.scrollTo({top:0})
+  // Ocultar wraps de módulos nuevos y quitar su estado activo (por si venías de Catálogo/Directorio/etc.)
+  document.querySelectorAll('[id$="-wrap"][id^="tab-"]').forEach(t => t.style.display='none')
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
   ['dashboard','leads','clientes','reportes','admin'].forEach(t=>{
     document.getElementById('nav-'+t).classList.toggle('active', t===tab);
     document.getElementById('panel-'+t).classList.toggle('active', t===tab);
@@ -3280,6 +3351,56 @@ async function sbPatch(table, id, data){
   })
   if(!res.ok) throw new Error(await res.text())
 }
+
+// ══════════════════════════════════════════
+// EXPORTAR — helpers genéricos (Excel / PDF) para módulos nuevos
+// ══════════════════════════════════════════
+function loadXLSXLib(cb){
+  if(typeof XLSX !== 'undefined'){ cb(); return }
+  const script = document.createElement('script')
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+  script.onload = cb
+  script.onerror = () => showToast('No se pudo cargar el motor de Excel','⚠️')
+  document.head.appendChild(script)
+}
+
+function exportModuloExcel(filename, sheetName, headers, rows){
+  if(!rows.length){ showToast('No hay datos para exportar','⚠️'); return }
+  loadXLSXLib(()=>{
+    const wb = XLSX.utils.book_new()
+    const aoa = [headers, ...rows]
+    const ws = XLSX.utils.aoa_to_sheet(aoa)
+    ws['!cols'] = headers.map(()=>({wch:18}))
+    XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0,31))
+    XLSX.writeFile(wb, `${filename}.xlsx`)
+    showToast(`Exportado: ${filename}.xlsx`,'⬇️')
+  })
+}
+
+function exportModuloPDF(title, headers, rows){
+  if(!rows.length){ showToast('No hay datos para exportar','⚠️'); return }
+  const win = window.open('','_blank','width=1000,height=800')
+  if(!win){ showToast('El navegador bloqueó la ventana de impresión','⚠️'); return }
+  const thead = `<tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr>`
+  const tbody = rows.map(r=>`<tr>${r.map(c=>`<td>${esc(String(c==null?'':c))}</td>`).join('')}</tr>`).join('')
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(title)}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:11px;padding:24px;color:#1C1A17}
+    h1{color:#1B3A6B;font-size:16px;margin-bottom:4px}
+    .sub{color:#8A8780;font-size:11px;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
+    th{background:#EEF2F8;color:#1B3A6B;font-size:10px;text-transform:uppercase}
+    tr:nth-child(even) td{background:#F7F6F3}
+  </style></head>
+  <body>
+    <h1>PMPS® — ${esc(title)}</h1>
+    <div class="sub">Generado el ${new Date().toLocaleString('es-MX')} · ${rows.length} registros</div>
+    <table><thead>${thead}</thead><tbody>${tbody}</tbody></table>
+    <script>window.onload=()=>window.print()<\/script>
+  </body></html>`)
+  win.document.close()
+}
 function setLoading(show, msg=''){
   const el = document.getElementById('loading')
   const msgEl = document.getElementById('loading-msg')
@@ -3427,7 +3548,10 @@ function fcRenderAsesor(clave, containerId){
     <div class="tbl-wrap">
       <div class="tbl-bar">
         <div class="sec-title">${items[0]?.asesor_nombre||clave} — Forecast 2026</div>
+        ${canEdit?'<span title="Celdas editables — haz clic en cualquier mes" style="font-size:11px;color:#1D9E75;font-weight:500">✏️ Editable</span>':''}
         <span class="results-label">${items.length} artículos</span>
+        <button onclick="fcExportExcelAsesor('${clave}')" style="padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
+        <button onclick="fcExportPDFAsesor('${clave}')" style="padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
         ${canEdit?`<button onclick="fcGuardarAsesor('${clave}')" id="fc-save-${clave}"
           style="background:var(--green);color:#fff;border:none;border-radius:7px;padding:6px 14px;
           font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);display:none">
@@ -3487,6 +3611,25 @@ function fcCellChange(id, mes, valor, clave){
   if(!fcPendientes[clave]) fcPendientes[clave]={}
   if(!fcPendientes[clave][id]) fcPendientes[clave][id]={}
   fcPendientes[clave][id][mes] = parseFloat(valor)||0
+}
+
+function fcExportExcel(){
+  const rows = forecast_data.map(r=>[r.asesor_nombre||r.asesor_clave||'', r.producto||'', r.codigo||'', ...MESES_FC.map(m=>parseFloat(r[m])||0), fcTotal(r)])
+  exportModuloExcel('PMPS_Forecast_2026', 'Forecast', ['Asesor','Producto','Código',...MESES_LABEL,'Total'], rows)
+}
+function fcExportPDF(){
+  const rows = forecast_data.map(r=>[r.asesor_nombre||r.asesor_clave||'', r.producto||'', fcTotal(r)])
+  exportModuloPDF('Forecast 2026 — Vista global', ['Asesor','Producto','Total'], rows)
+}
+function fcExportExcelAsesor(clave){
+  const items = forecast_data.filter(r=>r.asesor_clave===clave)
+  const rows = items.map(r=>[r.producto||'', r.codigo||'', ...MESES_FC.map(m=>parseFloat(r[m])||0), fcTotal(r)])
+  exportModuloExcel(`PMPS_Forecast_${clave}`, clave, ['Producto','Código',...MESES_LABEL,'Total'], rows)
+}
+function fcExportPDFAsesor(clave){
+  const items = forecast_data.filter(r=>r.asesor_clave===clave)
+  const rows = items.map(r=>[r.producto||'', fcTotal(r)])
+  exportModuloPDF(`Forecast 2026 — ${items[0]?.asesor_nombre||clave}`, ['Producto','Total'], rows)
 }
 
 async function fcGuardarAsesor(clave){
@@ -3700,6 +3843,22 @@ function renderPresupuesto(){
     </div>`).join('')
 }
 
+const MESES_NOMBRE_PRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+function presExportExcel(){
+  const rows = [...presupuesto_data].sort((a,b)=>a.mes-b.mes).map(r=>{
+    const presup = parseFloat(r.presupuesto||0), real = parseFloat(r.real||0)
+    return [MESES_NOMBRE_PRES[r.mes-1]||r.mes, presup, real, presup>0?Math.round(real/presup*100)+'%':'—']
+  })
+  exportModuloExcel('PMPS_Presupuesto_2026', 'Presupuesto', ['Mes',"Presupuesto C'26","Real C'26",'% Cumplimiento'], rows)
+}
+function presExportPDF(){
+  const rows = [...presupuesto_data].sort((a,b)=>a.mes-b.mes).map(r=>{
+    const presup = parseFloat(r.presupuesto||0), real = parseFloat(r.real||0)
+    return [MESES_NOMBRE_PRES[r.mes-1]||r.mes, fmtValor(presup), fmtValor(real), presup>0?Math.round(real/presup*100)+'%':'—']
+  })
+  exportModuloPDF('Presupuesto 2026', ['Mes',"Presupuesto C'26","Real C'26",'% Cumplimiento'], rows)
+}
+
 async function presUpdateReal(mes, id, valor){
   if(!id){ showToast('Guarda primero el presupuesto en Supabase','⚠️'); return }
   const v = parseFloat(valor)||0
@@ -3718,6 +3877,7 @@ async function presUpdateReal(mes, id, valor){
 let nuevosCargados = {}
 
 function switchTabNuevo(panel) {
+  window.scrollTo({top:0})
   // Ocultar todos los panels del v1 (usan clase 'active')
   ;['dashboard','leads','clientes','reportes','admin'].forEach(t=>{
     const p = document.getElementById('panel-'+t)
@@ -3840,10 +4000,49 @@ function catFilter(){
       </div>
       <div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:11px;color:var(--muted)">${p.uso_dosificacion||'—'}</span>
-        <span style="font-size:11px;color:var(--muted)">HDT ›</span>
+        <span style="display:flex;align-items:center;gap:6px">
+          ${currentUser.rol==='admin'?`<button onclick="event.stopPropagation();catOpenEdit('${p.id}')" title="Editar" style="background:none;border:none;cursor:pointer;font-size:12px">✏️</button>`:''}
+          <span style="font-size:11px;color:var(--muted)">HDT ›</span>
+        </span>
       </div>
     </div>`
   }).join('')||'<div style="text-align:center;padding:32px;color:var(--muted)">Sin resultados</div>'
+}
+
+function catExportExcel(){
+  const rows = productos_cat.map(p=>[p.clave||'', p.nombre||'', p.familia||'', p.uso_dosificacion||'', p.descripcion||''])
+  exportModuloExcel('PMPS_Catalogo', 'Catálogo', ['Clave','Nombre','Familia','Uso/Dosificación','Descripción'], rows)
+}
+function catExportPDF(){
+  const rows = productos_cat.map(p=>[p.clave||'', p.nombre||'', p.familia||'', p.uso_dosificacion||''])
+  exportModuloPDF('Catálogo de productos', ['Clave','Nombre','Familia','Uso/Dosificación'], rows)
+}
+
+let catEditingId = null
+function catOpenEdit(id){
+  const p = productos_cat.find(x=>x.id==id); if(!p) return
+  catEditingId = id
+  document.getElementById('cat-edit-nombre').value = p.nombre||''
+  document.getElementById('cat-edit-familia').value = p.familia||''
+  document.getElementById('cat-edit-uso').value = p.uso_dosificacion||''
+  document.getElementById('cat-edit-descripcion').value = p.descripcion||''
+  document.getElementById('modal-cat-edit').style.display = 'flex'
+}
+async function catSaveEdit(){
+  if(!catEditingId) return
+  const nombre = document.getElementById('cat-edit-nombre').value.trim()
+  const familia = document.getElementById('cat-edit-familia').value.trim()
+  const uso_dosificacion = document.getElementById('cat-edit-uso').value.trim()
+  const descripcion = document.getElementById('cat-edit-descripcion').value.trim()
+  if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
+  try {
+    await sbPatch('productos', catEditingId, {nombre, familia, uso_dosificacion, descripcion})
+    const idx = productos_cat.findIndex(x=>x.id===catEditingId)
+    if(idx>=0) Object.assign(productos_cat[idx], {nombre, familia, uso_dosificacion, descripcion})
+    document.getElementById('modal-cat-edit').style.display = 'none'
+    renderCatPills(); catFilter()
+    showToast('Producto actualizado ✓')
+  } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
 
 function verProducto(id){
@@ -3928,15 +4127,54 @@ function vhFilter(){
   if(countEl) countEl.textContent = data.length+' registros'
   const tbody = document.getElementById('vh-tbody')
   if(!tbody) return
-  if(!data.length){ tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Sin registros</td></tr>'; return }
+  if(!data.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Sin registros</td></tr>'; return }
   tbody.innerHTML = data.slice(0,200).map(r=>`
     <tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:7px 10px;font-weight:500">${r.cliente}</td>
-      <td style="padding:7px 10px;font-size:12px">${r.asesor_nombre||'—'}</td>
+      <td style="padding:7px 10px;font-weight:500">${esc(r.cliente)}</td>
+      <td style="padding:7px 10px;font-size:12px">${esc(r.asesor_nombre||'—')}</td>
       <td style="padding:7px 10px;font-family:monospace">${r.anio}</td>
-      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${r.sector||r.estado||'—'}</td>
+      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.sector||r.estado||'—')}</td>
       <td style="padding:7px 10px;text-align:right;font-family:monospace;font-weight:500">${fmtValor(parseFloat(r.total||0))}</td>
+      <td style="padding:7px 10px;text-align:center">${currentUser.rol==='admin'?`<button onclick="vhOpenEdit('${r.id}')" title="Editar" style="background:none;border:none;cursor:pointer;font-size:13px">✏️</button>`:''}</td>
     </tr>`).join('')
+}
+
+function vhExportExcel(){
+  const rows = ventas_data.map(r=>[r.cliente||'', r.asesor_nombre||'', r.anio||'', r.sector||r.estado||'', parseFloat(r.total||0)])
+  exportModuloExcel('PMPS_Ventas_Historicas', 'Ventas Hist.', ['Cliente','Asesor','Año','Sector','Total'], rows)
+}
+function vhExportPDF(){
+  const rows = ventas_data.map(r=>[r.cliente||'', r.asesor_nombre||'', r.anio||'', fmtValor(parseFloat(r.total||0))])
+  exportModuloPDF('Ventas Históricas', ['Cliente','Asesor','Año','Total'], rows)
+}
+
+let vhEditingId = null
+function vhOpenEdit(id){
+  const r = ventas_data.find(x=>String(x.id)===String(id)); if(!r) return
+  vhEditingId = id
+  document.getElementById('vh-edit-cliente').value = r.cliente||''
+  document.getElementById('vh-edit-asesor').value = r.asesor_nombre||''
+  document.getElementById('vh-edit-anio').value = r.anio||''
+  document.getElementById('vh-edit-sector').value = r.sector||r.estado||''
+  document.getElementById('vh-edit-total').value = r.total||0
+  document.getElementById('modal-vh-edit').style.display = 'flex'
+}
+async function vhSaveEdit(){
+  if(!vhEditingId) return
+  const cliente = document.getElementById('vh-edit-cliente').value.trim()
+  const asesor_nombre = document.getElementById('vh-edit-asesor').value.trim()
+  const anio = parseInt(document.getElementById('vh-edit-anio').value)||null
+  const sector = document.getElementById('vh-edit-sector').value.trim()
+  const total = parseFloat(document.getElementById('vh-edit-total').value)||0
+  if(!cliente){ showToast('El cliente es requerido','⚠️'); return }
+  try {
+    await sbPatch('ventas_historicas', vhEditingId, {cliente, asesor_nombre, anio, sector, total})
+    const idx = ventas_data.findIndex(x=>String(x.id)===String(vhEditingId))
+    if(idx>=0) Object.assign(ventas_data[idx], {cliente, asesor_nombre, anio, sector, total})
+    document.getElementById('modal-vh-edit').style.display = 'none'
+    renderVhKpis(); vhFilter()
+    showToast('Venta actualizada ✓')
+  } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
 
 // ═══════════════════════════════════════════
