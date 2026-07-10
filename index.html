@@ -314,6 +314,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div class="nav-item" id="nav-forecast" onclick="switchTabNuevo('forecast')" style="display:none">📈 Forecast</div>
     <div class="nav-item" id="nav-ventas-hist" onclick="switchTabNuevo('ventas-hist')" style="display:none">📊 Ventas Hist.</div>
     <div class="nav-item" id="nav-presupuesto" onclick="switchTabNuevo('presupuesto')" style="display:none">💰 Presupuesto</div>
+    <div class="nav-item" id="nav-directorio" onclick="switchTabNuevo('directorio')">📇 Directorio</div>
   </div>
 
   <div class="content">
@@ -1137,6 +1138,99 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="tbl-wrap"><div class="tbl-bar"><div class="sec-title">Por asesor 2025</div></div><div id="pres-asesores" style="padding:8px 16px"></div></div>
         <div class="tbl-wrap"><div class="tbl-bar"><div class="sec-title">Histórico anual</div></div><div id="pres-historico" style="padding:8px 16px"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-directorio-wrap" class="tab-content" style="display:none;padding:16px">
+    <div class="kpi-grid" id="dir-kpis" style="margin-bottom:16px"></div>
+    <div class="tbl-wrap">
+      <div class="tbl-bar" style="flex-wrap:wrap;gap:8px">
+        <div class="search-wrap" style="min-width:200px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="search-input" id="dir-search" placeholder="Buscar empresa o municipio..." oninput="dirFilter()">
+        </div>
+        <select class="fsel" id="dir-tier" onchange="dirFilter()">
+          <option value="">Todos los tiers</option>
+          <option value="Platino">🔵 Platino</option><option value="Oro">🟡 Oro</option>
+          <option value="Plata">⚪ Plata</option><option value="Bronce">🟤 Bronce</option>
+        </select>
+        <select class="fsel" id="dir-sector" onchange="dirFilter()">
+          <option value="">Todos los sectores</option>
+          <option value="Alimentos">Alimentos</option><option value="Bebidas">Bebidas</option>
+          <option value="Farmaceutico">Farmacéutico</option><option value="Hospitales">Hospitales</option>
+          <option value="Hoteles">Hoteles</option><option value="Institucional">Institucional</option>
+        </select>
+        <select class="fsel" id="dir-zona" onchange="dirFilter()">
+          <option value="">Todas las zonas</option>
+          <option value="Centro">Centro</option><option value="Norte">Norte</option>
+          <option value="Bajio">Bajío</option><option value="Sur">Sur</option>
+        </select>
+        <select class="fsel" id="dir-estado" onchange="dirFilter()"><option value="">Todos los estados</option></select>
+        <select class="fsel" id="dir-estatus" onchange="dirFilter()">
+          <option value="">Todos los estatus</option>
+          <option value="Nuevo">Nuevo</option><option value="Contactado">Contactado</option>
+          <option value="Calificado">Calificado</option><option value="Cliente">Cliente</option>
+        </select>
+        <label id="dir-mis-leads-wrap" style="display:none;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:0;font-weight:normal;text-transform:none;letter-spacing:0">
+          <input type="checkbox" id="dir-mis-leads" onchange="dirFilter()" style="width:14px;height:14px;margin:0"> Solo mis leads
+        </label>
+        <button onclick="dirClearFilters()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">Limpiar</button>
+        <button onclick="dirExportCSV()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Exportar CSV</button>
+        <span class="results-label" id="dir-count">Cargando…</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('nombre_establecimiento')">EMPRESA</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">GIRO</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('sector')">SECTOR</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('tier')">TIER</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('municipio')">MUNICIPIO</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('estado')">ESTADO</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">ZONA</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('estatus')">ESTATUS</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">VENDEDOR</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="dir-tbody"><tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Cargando directorio NEXUS…</td></tr></tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border)">
+        <span style="font-size:11px;color:var(--muted)" id="dir-page-info">—</span>
+        <div id="dir-page-btns" style="display:flex;gap:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal edición Directorio -->
+  <div id="modal-dir" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:center;justify-content:center;padding:8px">
+    <div style="background:#fff;border-radius:16px;width:440px;max-width:95vw;max-height:calc(100vh - 16px);overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:600">Editar lead</div>
+        <button onclick="document.getElementById('modal-dir').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+      </div>
+      <div style="padding:16px 20px">
+        <div style="font-size:15px;font-weight:600;margin-bottom:4px" id="dir-modal-empresa">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="dir-modal-sub">—</div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Estatus</label>
+          <select id="dir-modal-estatus" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff;margin-top:4px">
+            <option>Nuevo</option><option>Contactado</option><option>Calificado</option><option>Cliente</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Vendedor asignado</label>
+          <input type="text" id="dir-modal-vendedor" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px">
+        </div>
+        <div style="margin-bottom:4px">
+          <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Notas</label>
+          <textarea id="dir-modal-notas" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px;min-height:70px;resize:vertical"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
+        <button onclick="document.getElementById('modal-dir').style.display='none'" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
+        <button onclick="dirSaveModal()" style="padding:8px 16px;border-radius:8px;border:none;background:#1B3A6B;color:#fff;font-family:var(--font);font-weight:500;cursor:pointer">💾 Guardar</button>
       </div>
     </div>
   </div>
@@ -3660,6 +3754,11 @@ function switchTabNuevo(panel) {
       case 'forecast': loadForecast(); break
       case 'ventas-hist': loadVentas(); break
       case 'presupuesto': loadPresupuesto(); break
+      case 'directorio':
+        loadDirectorio()
+        const dmlw = document.getElementById('dir-mis-leads-wrap')
+        if(dmlw) dmlw.style.display = currentUser.rol==='admin' ? 'none' : 'flex'
+        break
     }
   }
 }
@@ -3936,6 +4035,213 @@ function descargarPDF(id){
   <p><strong>Asesor:</strong> ${r.asesor_nombre} | <strong>Urgencia:</strong> ${r.urgencia}</p>
   <script>window.onload=()=>window.print()<\/script></body></html>`)
   win.document.close()
+}
+
+// ═══════════════════════════════════════════
+// DIRECTORIO NEXUS (leads_menlun — 29,256 prospectos DENUE)
+// ═══════════════════════════════════════════
+let dirAllData = [], dirFiltered = [], dirPage = 1, dirSortCol = 'id', dirSortAsc = true, dirEditingId = null
+const DIR_PAGE_SIZE = 100
+const DIR_COLS = 'id,nombre_establecimiento,razon_social,giro,sector,tier,municipio,estado,zona_menlun,estatus,vendedor_asignado,notas,telefono,email,facturacion_estimada'
+
+async function dirFetchAll(){
+  let all = [], from = 0
+  const batchSize = 1000
+  while(true){
+    const batch = await sbGet('leads_menlun', DIR_COLS, `&order=id.asc&offset=${from}&limit=${batchSize}`)
+    if(!batch || !batch.length) break
+    all = all.concat(batch)
+    from += batchSize
+    if(batch.length < batchSize) break
+  }
+  return all
+}
+
+async function loadDirectorio(){
+  if(dirAllData.length){ dirFilter(); return }
+  const tbody = document.getElementById('dir-tbody')
+  try {
+    dirAllData = await dirFetchAll()
+    dirLoadEstados()
+    dirRenderKpis(dirAllData)
+    dirFiltered = [...dirAllData]
+    dirPage = 1
+    dirRenderTable()
+    showToast(`Directorio cargado — ${dirAllData.length.toLocaleString()} prospectos ✓`)
+  } catch(e){
+    if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Error cargando directorio. Verifica la conexión.</td></tr>`
+    showToast('Error cargando directorio','⚠️')
+  }
+}
+
+function dirLoadEstados(){
+  const estados = [...new Set(dirAllData.map(r=>r.estado).filter(Boolean))].sort()
+  const sel = document.getElementById('dir-estado')
+  if(!sel) return
+  sel.innerHTML = '<option value="">Todos los estados</option>' + estados.map(e=>`<option>${esc(e)}</option>`).join('')
+}
+
+function dirRenderKpis(data){
+  const kpis = document.getElementById('dir-kpis')
+  if(!kpis) return
+  const total = data.length
+  const byTier = t => data.filter(r=>r.tier===t).length
+  kpis.innerHTML = `
+    <div class="kpi"><div class="kpi-n" style="font-size:22px">${total.toLocaleString('es-MX')}</div><div class="kpi-l">Total leads</div></div>
+    <div class="kpi"><div class="kpi-n" style="font-size:22px;color:#185FA5">${byTier('Platino').toLocaleString('es-MX')}</div><div class="kpi-l">🔵 Platino</div></div>
+    <div class="kpi"><div class="kpi-n" style="font-size:22px;color:#854F0B">${byTier('Oro').toLocaleString('es-MX')}</div><div class="kpi-l">🟡 Oro</div></div>
+    <div class="kpi"><div class="kpi-n" style="font-size:22px;color:#5F5E5A">${byTier('Plata').toLocaleString('es-MX')}</div><div class="kpi-l">⚪ Plata</div></div>`
+}
+
+function dirFilter(){
+  const q = (document.getElementById('dir-search')?.value||'').toLowerCase()
+  const tier = document.getElementById('dir-tier')?.value||''
+  const sector = document.getElementById('dir-sector')?.value||''
+  const zona = document.getElementById('dir-zona')?.value||''
+  const estado = document.getElementById('dir-estado')?.value||''
+  const estatus = document.getElementById('dir-estatus')?.value||''
+  const misLeads = document.getElementById('dir-mis-leads')?.checked||false
+
+  dirFiltered = dirAllData.filter(r=>{
+    if(q && !((r.nombre_establecimiento||'').toLowerCase().includes(q) || (r.razon_social||'').toLowerCase().includes(q) || (r.municipio||'').toLowerCase().includes(q))) return false
+    if(tier && r.tier!==tier) return false
+    if(sector && r.sector!==sector) return false
+    if(zona && r.zona_menlun!==zona) return false
+    if(estado && r.estado!==estado) return false
+    if(estatus && r.estatus!==estatus) return false
+    if(misLeads && currentUser.rol!=='admin' && r.vendedor_asignado!==currentUser.nombre) return false
+    return true
+  })
+  dirPage = 1
+  dirRenderTable()
+}
+
+function dirClearFilters(){
+  ;['dir-search'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value='' })
+  ;['dir-tier','dir-sector','dir-zona','dir-estado','dir-estatus'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value='' })
+  const ml = document.getElementById('dir-mis-leads'); if(ml) ml.checked=false
+  dirFiltered = [...dirAllData]
+  dirPage = 1
+  dirRenderTable()
+}
+
+function dirSortBy(col){
+  if(dirSortCol===col) dirSortAsc = !dirSortAsc
+  else { dirSortCol = col; dirSortAsc = true }
+  dirFiltered.sort((a,b)=>{
+    const va = (a[col]||'').toString().toLowerCase()
+    const vb = (b[col]||'').toString().toLowerCase()
+    return dirSortAsc ? va.localeCompare(vb) : vb.localeCompare(va)
+  })
+  dirPage = 1
+  dirRenderTable()
+}
+
+function dirTierBadge(t){
+  const map = {'Platino':['#E6F1FB','#0C447C'],'Oro':['#FAEEDA','#633806'],'Plata':['#F0EEE9','#8A8780'],'Bronce':['#FAECE7','#4A1B0C']}
+  const [bg,col] = map[t]||['#F0EEE9','#8A8780']
+  return `<span style="padding:2px 9px;border-radius:99px;font-size:11px;font-weight:500;background:${bg};color:${col}">${t||'—'}</span>`
+}
+
+function dirEstatusBadge(e){
+  const map = {'Nuevo':['#EAF3DE','#27500A'],'Contactado':['#E6F1FB','#0C447C'],'Calificado':['#FAEEDA','#633806'],'Cliente':['#E1F5EE','#085041']}
+  const [bg,col] = map[e]||map['Nuevo']
+  return `<span style="padding:2px 9px;border-radius:99px;font-size:11px;font-weight:500;background:${bg};color:${col}">${e||'Nuevo'}</span>`
+}
+
+function dirRenderTable(){
+  const countEl = document.getElementById('dir-count')
+  if(countEl) countEl.textContent = dirFiltered.length.toLocaleString('es-MX')+' resultados'
+  const tbody = document.getElementById('dir-tbody')
+  if(!tbody) return
+  if(!dirFiltered.length){
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados con estos filtros</td></tr>`
+    dirRenderPagination(); return
+  }
+  const start = (dirPage-1)*DIR_PAGE_SIZE
+  const page = dirFiltered.slice(start, start+DIR_PAGE_SIZE)
+  tbody.innerHTML = page.map(r=>`
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:7px 10px;font-weight:500;font-size:12px">${esc(r.nombre_establecimiento||r.razon_social||'—')}</td>
+      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.giro||'—')}</td>
+      <td style="padding:7px 10px;font-size:11px">${esc(r.sector||'—')}</td>
+      <td style="padding:7px 10px">${dirTierBadge(r.tier)}</td>
+      <td style="padding:7px 10px;font-size:12px">${esc(r.municipio||'—')}</td>
+      <td style="padding:7px 10px;font-size:12px">${esc(r.estado||'—')}</td>
+      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.zona_menlun||'—')}</td>
+      <td style="padding:7px 10px">${dirEstatusBadge(r.estatus)}</td>
+      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.vendedor_asignado||'—')}</td>
+      <td style="padding:7px 10px"><button onclick="dirOpenModal(${r.id})" style="background:none;border:none;cursor:pointer;font-size:13px" title="Editar">✏️</button></td>
+    </tr>`).join('')
+  const total = dirFiltered.length, end = Math.min(start+DIR_PAGE_SIZE, total)
+  const info = document.getElementById('dir-page-info')
+  if(info) info.textContent = `Mostrando ${(start+1).toLocaleString('es-MX')}–${end.toLocaleString('es-MX')} de ${total.toLocaleString('es-MX')}`
+  dirRenderPagination()
+}
+
+function dirRenderPagination(){
+  const totalPages = Math.ceil(dirFiltered.length/DIR_PAGE_SIZE)
+  const btns = document.getElementById('dir-page-btns')
+  if(!btns) return
+  if(totalPages<=1){ btns.innerHTML=''; return }
+  let html = `<button onclick="dirGoPage(${dirPage-1})" ${dirPage===1?'disabled':''} style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer">‹</button>`
+  const range = []
+  for(let i=1;i<=totalPages;i++){ if(i===1||i===totalPages||Math.abs(i-dirPage)<=2) range.push(i); else if(range[range.length-1]!=='…') range.push('…') }
+  range.forEach(p=>{
+    if(p==='…') html += `<span style="padding:0 4px;color:var(--muted);font-size:11px">…</span>`
+    else html += `<button onclick="dirGoPage(${p})" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:${p===dirPage?'#1B3A6B':'#fff'};color:${p===dirPage?'#fff':'var(--text)'};cursor:pointer;font-size:11px">${p}</button>`
+  })
+  html += `<button onclick="dirGoPage(${dirPage+1})" ${dirPage===totalPages?'disabled':''} style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer">›</button>`
+  btns.innerHTML = html
+}
+
+function dirGoPage(p){
+  const totalPages = Math.ceil(dirFiltered.length/DIR_PAGE_SIZE)
+  if(p<1||p>totalPages) return
+  dirPage = p
+  dirRenderTable()
+}
+
+function dirExportCSV(){
+  const data = dirFiltered
+  if(!data.length){ showToast('No hay datos para exportar','⚠️'); return }
+  const cols = ['id','nombre_establecimiento','razon_social','giro','sector','tier','facturacion_estimada','municipio','estado','zona_menlun','telefono','email','estatus','vendedor_asignado','notas']
+  const header = cols.join(',')
+  const rows = data.map(r=>cols.map(c=>`"${(r[c]||'').toString().replace(/"/g,'""')}"`).join(','))
+  const csv = [header,...rows].join('\n')
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'})
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = `nexus_leads_${new Date().toISOString().slice(0,10)}.csv`
+  a.click(); URL.revokeObjectURL(url)
+  showToast(`${data.length.toLocaleString('es-MX')} leads exportados ✓`)
+}
+
+function dirOpenModal(id){
+  const r = dirAllData.find(x=>x.id===id); if(!r) return
+  dirEditingId = id
+  document.getElementById('dir-modal-empresa').textContent = r.nombre_establecimiento||r.razon_social||'—'
+  document.getElementById('dir-modal-sub').textContent = `${r.municipio||'—'}, ${r.estado||''} · ${r.sector||'—'}`
+  document.getElementById('dir-modal-estatus').value = r.estatus||'Nuevo'
+  document.getElementById('dir-modal-vendedor').value = r.vendedor_asignado || (currentUser.rol!=='admin' ? currentUser.nombre : '')
+  document.getElementById('dir-modal-notas').value = r.notas||''
+  document.getElementById('modal-dir').style.display = 'flex'
+}
+
+async function dirSaveModal(){
+  if(!dirEditingId) return
+  const estatus = document.getElementById('dir-modal-estatus').value
+  const vendedor = document.getElementById('dir-modal-vendedor').value
+  const notas = document.getElementById('dir-modal-notas').value
+  try {
+    await sbPatch('leads_menlun', dirEditingId, {estatus, vendedor_asignado: vendedor, notas})
+    const idx = dirAllData.findIndex(x=>x.id===dirEditingId)
+    if(idx>=0){ dirAllData[idx].estatus=estatus; dirAllData[idx].vendedor_asignado=vendedor; dirAllData[idx].notas=notas }
+    document.getElementById('modal-dir').style.display = 'none'
+    dirRenderKpis(dirAllData)
+    dirFilter()
+    showToast('Lead actualizado ✓')
+  } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
 
 </script>
