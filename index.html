@@ -53,12 +53,21 @@ textarea{resize:vertical;min-height:70px}
 .user-name{font-size:12px;font-weight:500}
 
 /* NAV */
-.nav{background:#EEF2F8;border-bottom:1px solid #C8D8EE;padding:0 24px;display:flex;gap:0;overflow-x:auto;flex-wrap:wrap}
-.nav-item{padding:14px 18px;font-size:13px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;white-space:nowrap}
-.nav-item:hover{color:var(--text)}
-.nav-item{padding:14px 16px;font-size:13px;font-weight:500;color:#4A6080;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s}
-.nav-item:hover{color:#1B3A6B;background:rgba(27,58,107,0.06)}
-.nav-item.active{color:#1B3A6B;border-bottom-color:#1B3A6B;font-weight:600}
+.nav{background:#EEF2F8;border-bottom:1px solid #C8D8EE;padding:0 24px;display:flex;gap:2px;overflow-x:auto;flex-wrap:wrap}
+.nav-item{padding:16px 20px;font-size:14.5px;font-weight:600;color:#4A6080;border-bottom:3px solid transparent;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;white-space:nowrap;border-radius:8px 8px 0 0}
+.nav-item .nav-ico{font-size:19px;line-height:1}
+.nav-item:hover{color:#1B3A6B;background:rgba(27,58,107,0.08)}
+.nav-item.active{color:#1B3A6B;border-bottom-color:#1B3A6B;background:rgba(27,58,107,0.05);font-weight:700}
+
+/* Export buttons con logo */
+.btn-export-xls,.btn-export-pdf{padding:7px 14px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;transition:all .15s}
+.btn-export-xls{color:#1D6F42;border-color:#bfe3cf}
+.btn-export-xls:hover{background:#EAF7EF;border-color:#1D6F42}
+.btn-export-pdf{color:#B0201A;border-color:#f2c6c3}
+.btn-export-pdf:hover{background:#FCEDEC;border-color:#B0201A}
+.pres-subtab{padding:9px 16px;font-size:12.5px;font-weight:600;color:#4A6080;border-bottom:3px solid transparent;cursor:pointer;border-radius:6px 6px 0 0;white-space:nowrap}
+.pres-subtab:hover{background:rgba(27,58,107,0.07);color:#1B3A6B}
+.pres-subtab.active{color:#1B3A6B;background:rgba(27,58,107,0.09);border-bottom-color:#1B3A6B}
 
 /* CONTENT */
 .content{max-width:1000px;margin:0 auto;padding:24px 20px}
@@ -303,18 +312,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   </div>
 
   <div class="nav">
-    <div class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')">📊 Mi Dashboard</div>
-    <div class="nav-item" id="nav-leads" onclick="switchTab('leads')">🎯 Mis Leads</div>
-    <div class="nav-item" id="nav-clientes" onclick="switchTab('clientes')">🏢 Mis Clientes</div>
-    <div class="nav-item" id="nav-reportes" onclick="switchTab('reportes')">📈 Reportes</div>
-    <div class="nav-item" id="nav-admin" onclick="switchTab('admin')" style="display:none;color:#1B2A4A;font-weight:600">⚙️ Administrador</div>
-    <div class="nav-item" id="nav-catalogo" onclick="switchTabNuevo('catalogo')">📦 Catálogo</div>
-    <div class="nav-item" id="nav-equipos" onclick="switchTabNuevo('equipos')">🖥️ Equipos</div>
-    <div class="nav-item" id="nav-rep-fo" onclick="switchTabNuevo('rep-fo')">📋 Reportes FO-VE-01</div>
-    <div class="nav-item" id="nav-forecast" onclick="switchTabNuevo('forecast')" style="display:none">📈 Forecast</div>
-    <div class="nav-item" id="nav-ventas-hist" onclick="switchTabNuevo('ventas-hist')" style="display:none">📊 Ventas Hist.</div>
-    <div class="nav-item" id="nav-presupuesto" onclick="switchTabNuevo('presupuesto')" style="display:none">💰 Presupuesto</div>
-    <div class="nav-item" id="nav-directorio" onclick="switchTabNuevo('directorio')">📇 Directorio</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')"><span class="nav-ico">📊</span> Mi Dashboard</div>
+    <div class="nav-item" id="nav-leads" onclick="switchTab('leads')"><span class="nav-ico">🎯</span> Mis Leads</div>
+    <div class="nav-item" id="nav-clientes" onclick="switchTab('clientes')"><span class="nav-ico">🏢</span> Mis Clientes</div>
+    <div class="nav-item" id="nav-reportes" onclick="switchTab('reportes')"><span class="nav-ico">📈</span> Reportes</div>
+    <div class="nav-item" id="nav-admin" onclick="switchTab('admin')" style="display:none;color:#1B2A4A;font-weight:700"><span class="nav-ico">⚙️</span> Administrador</div>
+    <div class="nav-item" id="nav-catalogo" onclick="switchTabNuevo('catalogo')"><span class="nav-ico">📦</span> Catálogo</div>
+    <div class="nav-item" id="nav-equipos" onclick="switchTabNuevo('equipos')"><span class="nav-ico">🖥️</span> Equipos</div>
+    <div class="nav-item" id="nav-rep-fo" onclick="switchTabNuevo('rep-fo')"><span class="nav-ico">📋</span> Reportes FO-VE-01</div>
+    <div class="nav-item" id="nav-forecast" onclick="switchTabNuevo('forecast')" style="display:none"><span class="nav-ico">📈</span> Forecast</div>
+    <div class="nav-item" id="nav-ventas-hist" onclick="switchTabNuevo('ventas-hist')" style="display:none"><span class="nav-ico">📊</span> Ventas Hist.</div>
+    <div class="nav-item" id="nav-presupuesto" onclick="switchTabNuevo('presupuesto')" style="display:none"><span class="nav-ico">💰</span> Presupuesto</div>
+    <div class="nav-item" id="nav-directorio" onclick="switchTabNuevo('directorio')"><span class="nav-ico">📇</span> Directorio</div>
   </div>
 
   <div class="content">
@@ -952,8 +961,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <option>Lavandería</option><option>Control Personal</option>
         <option>Mantenimiento de Planta</option><option>Especialidades</option>
       </select>
-      <button onclick="catExportExcel()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
-      <button onclick="catExportPDF()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
+      <button onclick="catExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
+      <button onclick="catExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
       <span class="results-label" id="cat-count">— productos</span>
     </div>
     <div id="cat-pills-row" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px"></div>
@@ -1096,8 +1105,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <input type="checkbox" id="fc-solo-datos" onchange="fcRenderGlobal()" style="width:14px;height:14px;margin:0">
           Solo artículos con datos
         </label>
-        <button onclick="fcExportExcel()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
-        <button onclick="fcExportPDF()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
+        <button onclick="fcExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
+        <button onclick="fcExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
         <span style="font-size:11px;color:var(--muted);margin-left:auto">✏️ Para editar cifras ve al tab de tu asesor</span>
       </div>
       <div id="fc-global-body"></div>
@@ -1141,8 +1150,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input class="search-input" id="vh-search" placeholder="Buscar cliente..." oninput="vhFilter()">
       </div>
-      <button onclick="vhExportExcel()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
-      <button onclick="vhExportPDF()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
+      <button onclick="vhExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
+      <button onclick="vhExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
       <span class="results-label" id="vh-count">—</span>
     </div>
     <table style="width:100%;border-collapse:collapse">
@@ -1190,21 +1199,32 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
   <div id="tab-presupuesto-wrap" class="tab-content" style="display:none;padding:16px">
     <div class="kpi-grid" id="pres-kpis" style="margin-bottom:16px"></div>
+    <div id="pres-subtabs" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:0"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-      <div style="font-size:14px;font-weight:600">Cumplimiento mensual 2026
-        <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:11px;font-weight:500;color:#1D9E75;margin-left:6px">✏️ Editable — columna REAL C'26</span>
+      <div style="font-size:14px;font-weight:600" id="pres-subtab-title">Cumplimiento mensual 2026
+        <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:11px;font-weight:500;color:#1D9E75;margin-left:6px">✏️ Editable</span>
       </div>
       <div style="display:flex;gap:8px">
-        <button onclick="presExportExcel()" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
-        <button onclick="presExportPDF()" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
-        <button onclick="togglePresGraficas()" id="btn-pres-graficas" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">📊 Ver gráficas</button>
+        <button onclick="presExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
+        <button onclick="presExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
+        <button onclick="presOpenGraficas()" id="btn-pres-graficas" class="btn-export-xls" style="border-color:#B5D4F4">📊 Ver gráficas</button>
       </div>
     </div>
     <div id="pres-tabla" style="overflow-x:auto;margin-bottom:16px"></div>
-    <div id="pres-graficas-wrap" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="tbl-wrap"><div class="tbl-bar"><div class="sec-title">Por asesor 2025</div></div><div id="pres-asesores" style="padding:8px 16px"></div></div>
+  </div>
+
+  <div id="modal-pres-graficas" style="display:none;position:fixed;inset:0;background:rgba(20,20,20,0.55);z-index:999;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#fff;border-radius:14px;max-width:1100px;width:100%;max-height:88vh;overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:16px;font-weight:700">📊 Gráficas de Presupuesto</div>
+        <button onclick="document.getElementById('modal-pres-graficas').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--muted)">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="tbl-wrap"><div class="tbl-bar"><div class="sec-title">Por asesor 2026 (PRESUP vs REAL)</div></div><div id="pres-asesores" style="padding:8px 16px"></div></div>
         <div class="tbl-wrap"><div class="tbl-bar"><div class="sec-title">Histórico anual</div></div><div id="pres-historico" style="padding:8px 16px"></div></div>
+      </div>
+      <div class="tbl-wrap" style="margin-top:16px"><div class="tbl-bar"><div class="sec-title">Cumplimiento mensual — barras</div></div>
+        <canvas id="pres-chart-mensual" style="max-height:280px;padding:12px"></canvas>
       </div>
     </div>
   </div>
@@ -1551,10 +1571,10 @@ function doLogout(){
 // NAVEGACIÓN
 // ══════════════════════════════════════════
 function switchTab(tab){
-  window.scrollTo({top:0})
+  window.scrollTo({top:0});
   // Ocultar wraps de módulos nuevos y quitar su estado activo (por si venías de Catálogo/Directorio/etc.)
-  document.querySelectorAll('[id$="-wrap"][id^="tab-"]').forEach(t => t.style.display='none')
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+  document.querySelectorAll('[id$="-wrap"][id^="tab-"]').forEach(t => t.style.display='none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   ['dashboard','leads','clientes','reportes','admin'].forEach(t=>{
     document.getElementById('nav-'+t).classList.toggle('active', t===tab);
     document.getElementById('panel-'+t).classList.toggle('active', t===tab);
@@ -3440,16 +3460,22 @@ const AV_COLOR = {
 const MESES_FC = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
 const MESES_LABEL = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC']
 let forecast_data = [], presupuesto_data = [], ventas_data = [], productos_cat = [], equipos_data = [], reportes_data = [], usuarios_data = null
+let presupuesto_asesores_data = [], presActiveSubtab = 'general'
+const PRES_ASESORES_CFG = [
+  {clave:'general', nombre:'General (todo Menlun)'},
+  {clave:'CORPORATIVOS', nombre:'Corporativos'},
+  {clave:'ARTURO', nombre:'Arturo Salazar'},
+  {clave:'TERESA', nombre:'Maria Teresa'},
+  {clave:'JESUS', nombre:'Jesus Garcia'},
+  {clave:'ASESOR_LD', nombre:'Asesor LD'},
+  {clave:'PACIFICO', nombre:'Pacífico'},
+  {clave:'DISTRIBUIDOR', nombre:'Distribuidor'},
+]
 
-
-// Toggle gráficas presupuesto
-function togglePresGraficas(){
-  const wrap = document.getElementById('pres-graficas-wrap')
-  const btn = document.getElementById('btn-pres-graficas')
-  if(!wrap) return
-  const visible = wrap.style.display !== 'none'
-  wrap.style.display = visible ? 'none' : 'block'
-  btn.textContent = visible ? '📊 Ver gráficas' : '📊 Ocultar gráficas'
+// Abrir modal de gráficas de presupuesto
+function presOpenGraficas(){
+  document.getElementById('modal-pres-graficas').style.display = 'flex'
+  presRenderGraficaMensual()
 }
 
 // ═══════════════════════════════════════════
@@ -3550,8 +3576,8 @@ function fcRenderAsesor(clave, containerId){
         <div class="sec-title">${items[0]?.asesor_nombre||clave} — Forecast 2026</div>
         ${canEdit?'<span title="Celdas editables — haz clic en cualquier mes" style="font-size:11px;color:#1D9E75;font-weight:500">✏️ Editable</span>':''}
         <span class="results-label">${items.length} artículos</span>
-        <button onclick="fcExportExcelAsesor('${clave}')" style="padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Excel</button>
-        <button onclick="fcExportPDFAsesor('${clave}')" style="padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ PDF</button>
+        <button onclick="fcExportExcelAsesor('${clave}')" class="btn-export-xls" style="padding:5px 10px" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"/>Excel</button>
+        <button onclick="fcExportPDFAsesor('${clave}')" class="btn-export-pdf" style="padding:5px 10px" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"/>PDF</button>
         ${canEdit?`<button onclick="fcGuardarAsesor('${clave}')" id="fc-save-${clave}"
           style="background:var(--green);color:#fff;border:none;border-radius:7px;padding:6px 14px;
           font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);display:none">
@@ -3703,8 +3729,110 @@ function fcRenderTablaAsesor(clave, items, canEdit, container){
 async function loadPresupuesto(){
   try {
     presupuesto_data = await sbGet('presupuesto_2026','*','&order=mes.asc')
-    renderPresupuesto()
+    presupuesto_asesores_data = await sbGet('presupuesto_asesores','*','&order=asesor_clave.asc,mes.asc')
+    presRenderSubtabs()
+    presSwitchSubtab('general')
   } catch(e){ showToast('Error cargando presupuesto','⚠️') }
+}
+
+function presRenderSubtabs(){
+  const wrap = document.getElementById('pres-subtabs')
+  if(!wrap) return
+  wrap.innerHTML = PRES_ASESORES_CFG.map(a=>
+    `<div class="pres-subtab ${a.clave===presActiveSubtab?'active':''}" data-clave="${a.clave}" onclick="presSwitchSubtab('${a.clave}')">${esc(a.nombre)}</div>`
+  ).join('')
+}
+
+function presSwitchSubtab(clave){
+  presActiveSubtab = clave
+  document.querySelectorAll('.pres-subtab').forEach(el=>el.classList.toggle('active', el.dataset.clave===clave))
+  const titleEl = document.getElementById('pres-subtab-title')
+  if(clave==='general'){
+    if(titleEl) titleEl.innerHTML = `Cumplimiento mensual 2026 <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:11px;font-weight:500;color:#1D9E75;margin-left:6px">✏️ Editable</span>`
+    renderPresupuesto()
+  } else {
+    const cfg = PRES_ASESORES_CFG.find(a=>a.clave===clave)
+    if(titleEl) titleEl.innerHTML = `Presupuesto — ${esc(cfg?.nombre||clave)} <span title="Haz clic en la columna REAL C'26 para editarla" style="font-size:11px;font-weight:500;color:#1D9E75;margin-left:6px">✏️ Editable</span>`
+    presRenderAsesorTabla(clave)
+  }
+}
+
+function presRenderAsesorTabla(clave){
+  const tabla = document.getElementById('pres-tabla')
+  if(!tabla) return
+  const rows = presupuesto_asesores_data.filter(r=>r.asesor_clave===clave).sort((a,b)=>a.mes-b.mes)
+  const fmtK = v => {
+    if(!v) return '—'
+    if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M'
+    if(v>=1000) return '$'+(v/1000).toFixed(0)+'k'
+    return '$'+Math.round(v)
+  }
+  const totPresup = rows.reduce((s,r)=>s+(parseFloat(r.presup_c26)||0),0)
+  const totReal = rows.reduce((s,r)=>s+(parseFloat(r.real_c26)||0),0)
+  tabla.innerHTML = `<div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap">
+      <thead><tr style="background:#1a3a6b;color:#fff">
+        <th style="padding:7px 10px;text-align:left;border-right:1px solid rgba(255,255,255,0.15)">MES</th>
+        <th style="padding:7px 8px;text-align:right;opacity:.8">REAL C'25</th>
+        <th style="padding:7px 8px;text-align:right;border-left:2px solid rgba(255,255,255,0.3)">PRESUP C'26</th>
+        <th style="padding:7px 8px;text-align:right;background:rgba(29,158,117,0.35)">REAL C'26 ✎</th>
+        <th style="padding:7px 8px;text-align:right;opacity:.85">PROM C'26</th>
+        <th style="padding:7px 8px;text-align:center">% / PRESUP.</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((r,i)=>{
+          const presup=parseFloat(r.presup_c26)||0, real=parseFloat(r.real_c26)||0, tiene=real>0
+          const pctRow = presup>0 && tiene ? Math.round(real/presup*100) : null
+          const col=pctRow>=100?'#1D9E75':pctRow>=75?'#854F0B':'#A32D2D'
+          return `<tr style="background:${i%2===0?'#fff':'#F7F6F3'};border-bottom:0.5px solid #E2DFD8">
+            <td style="padding:6px 10px;font-weight:700;border-right:1px solid #E2DFD8">${MESES_LABEL[r.mes-1]}</td>
+            <td style="padding:6px 8px;text-align:right;color:#999">${fmtK(r.real_c25)}</td>
+            <td style="padding:6px 8px;text-align:right;font-weight:600;border-left:2px solid #E2DFD8;color:#1a3a6b">${fmtK(presup)}</td>
+            <td style="padding:3px 4px;background:${tiene?'#f0faf5':'#fff'}">
+              <input type="number" value="${real||''}" placeholder="—"
+                style="width:100%;text-align:right;padding:4px 6px;border:1px solid ${tiene?'#1D9E75':'#E2DFD8'};
+                border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:600;
+                color:${tiene?'#1D9E75':'#999'};background:transparent"
+                onchange="presUpdateRealAsesor('${clave}',${r.mes},this.value)">
+            </td>
+            <td style="padding:6px 8px;text-align:right;color:#666">${fmtK(r.prom_c26)}</td>
+            <td style="padding:6px 8px;text-align:center">
+              ${tiene?`<span style="padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;
+                background:${pctRow>=100?'#E1F5EE':pctRow>=75?'#FAEEDA':'#FCEBEB'};color:${col}">${pctRow}%</span>`
+                :'<span style="color:#ddd">—</span>'}
+            </td>
+          </tr>`
+        }).join('')}
+        <tr style="background:#1a3a6b;color:#fff;font-weight:700">
+          <td style="padding:7px 10px">TOTAL</td>
+          <td style="padding:7px 8px;text-align:right;opacity:.8">—</td>
+          <td style="padding:7px 8px;text-align:right">${fmtK(totPresup)}</td>
+          <td style="padding:7px 8px;text-align:right;background:rgba(29,158,117,0.3)">${fmtK(totReal)}</td>
+          <td style="padding:7px 8px;text-align:right"></td>
+          <td style="padding:7px 8px;text-align:center">${totPresup>0?Math.round(totReal/totPresup*100)+'%':'—'}</td>
+        </tr>
+      </tbody>
+    </table></div>`
+  const kpis = document.getElementById('pres-kpis')
+  if(kpis){
+    const pct = totPresup>0 ? totReal/totPresup : 0
+    kpis.innerHTML = `
+      <div class="kpi"><div class="kpi-n">${fmtValor(totReal)}</div><div class="kpi-l">Real acumulado 2026</div></div>
+      <div class="kpi"><div class="kpi-n ${pct>=0.95?'text-green':pct>=0.75?'text-amber':'text-red'}">${Math.round(pct*100)}%</div><div class="kpi-l">Cumplimiento</div></div>
+      <div class="kpi"><div class="kpi-n">${fmtValor(totPresup)}</div><div class="kpi-l">Presupuesto anual</div></div>
+      <div class="kpi"><div class="kpi-n">${rows.length}</div><div class="kpi-l">Meses con datos</div></div>`
+  }
+}
+
+async function presUpdateRealAsesor(clave, mes, valor){
+  const num = parseFloat(valor)||0
+  try {
+    await sbPatch('presupuesto_asesores', `asesor_clave=eq.${clave}&mes=eq.${mes}`, {real_c26:num, updated_at:new Date().toISOString()})
+    const row = presupuesto_asesores_data.find(r=>r.asesor_clave===clave && r.mes===mes)
+    if(row) row.real_c26 = num
+    showToast('Actualizado','✅')
+    presRenderAsesorTabla(clave)
+  } catch(e){ showToast('Error al guardar','⚠️') }
 }
 
 function renderPresupuesto(){
@@ -3810,15 +3938,12 @@ function renderPresupuesto(){
       </tbody>
     </table></div>`
 
-  const asesores=[
-    {n:'José Carlos',total:6174466,color:AV_COLOR['José Carlos']||'#1a3a6b'},
-    {n:'Jesús',total:7412267,color:AV_COLOR['Jesús']||'#3B6D11'},
-    {n:'Arturo',total:4193282,color:AV_COLOR['Arturo']||'#854F0B'},
-    {n:'Mary Tere',total:5366030,color:AV_COLOR['Mary Tere']||'#534AB7'},
-    {n:'Daniel',total:2131210,color:AV_COLOR['Daniel']||'#A32D2D'},
-    {n:'Sin asignar',total:973741,color:'#888'}
-  ]
-  const maxA=Math.max(...asesores.map(a=>a.total))
+  const coloresAsesor = {CORPORATIVOS:'#1a3a6b',ARTURO:'#854F0B',TERESA:'#534AB7',JESUS:'#3B6D11',ASESOR_LD:'#A32D2D',PACIFICO:'#0E7C86',DISTRIBUIDOR:'#888'}
+  const asesores = PRES_ASESORES_CFG.filter(a=>a.clave!=='general').map(a=>{
+    const rows = presupuesto_asesores_data.filter(r=>r.asesor_clave===a.clave)
+    return {n:a.nombre, total: rows.reduce((s,r)=>s+(parseFloat(r.real_c26)||0),0), color: coloresAsesor[a.clave]||'#888'}
+  })
+  const maxA=Math.max(1,...asesores.map(a=>a.total))
   const aWrap=document.getElementById('pres-asesores')
   if(aWrap) aWrap.innerHTML=asesores.map(a=>`
     <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border)">
@@ -3845,18 +3970,65 @@ function renderPresupuesto(){
 
 const MESES_NOMBRE_PRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 function presExportExcel(){
-  const rows = [...presupuesto_data].sort((a,b)=>a.mes-b.mes).map(r=>{
-    const presup = parseFloat(r.presupuesto||0), real = parseFloat(r.real||0)
-    return [MESES_NOMBRE_PRES[r.mes-1]||r.mes, presup, real, presup>0?Math.round(real/presup*100)+'%':'—']
-  })
-  exportModuloExcel('PMPS_Presupuesto_2026', 'Presupuesto', ['Mes',"Presupuesto C'26","Real C'26",'% Cumplimiento'], rows)
+  if(presActiveSubtab==='general'){
+    const rows = [...presupuesto_data].sort((a,b)=>a.mes-b.mes).map(r=>{
+      const presup = parseFloat(r.presupuesto||0), real = parseFloat(r.real||0)
+      return [MESES_NOMBRE_PRES[r.mes-1]||r.mes, presup, real, presup>0?Math.round(real/presup*100)+'%':'—']
+    })
+    exportModuloExcel('PMPS_Presupuesto_2026', 'Presupuesto', ['Mes',"Presupuesto C'26","Real C'26",'% Cumplimiento'], rows)
+  } else {
+    const cfg = PRES_ASESORES_CFG.find(a=>a.clave===presActiveSubtab)
+    const rows = presupuesto_asesores_data.filter(r=>r.asesor_clave===presActiveSubtab).sort((a,b)=>a.mes-b.mes).map(r=>
+      [MESES_NOMBRE_PRES[r.mes-1], r.real_c25, r.presup_c26, r.real_c26, r.prom_c26]
+    )
+    exportModuloExcel(`PMPS_Presupuesto_${presActiveSubtab}`, cfg?.nombre||presActiveSubtab, ['Mes',"Real C'25","Presup C'26","Real C'26","Prom C'26"], rows)
+  }
 }
 function presExportPDF(){
-  const rows = [...presupuesto_data].sort((a,b)=>a.mes-b.mes).map(r=>{
-    const presup = parseFloat(r.presupuesto||0), real = parseFloat(r.real||0)
-    return [MESES_NOMBRE_PRES[r.mes-1]||r.mes, fmtValor(presup), fmtValor(real), presup>0?Math.round(real/presup*100)+'%':'—']
-  })
-  exportModuloPDF('Presupuesto 2026', ['Mes',"Presupuesto C'26","Real C'26",'% Cumplimiento'], rows)
+  if(presActiveSubtab==='general'){
+    const rows = [...presupuesto_data].sort((a,b)=>a.mes-b.mes).map(r=>{
+      const presup = parseFloat(r.presupuesto||0), real = parseFloat(r.real||0)
+      return [MESES_NOMBRE_PRES[r.mes-1]||r.mes, fmtValor(presup), fmtValor(real), presup>0?Math.round(real/presup*100)+'%':'—']
+    })
+    exportModuloPDF('Presupuesto 2026', ['Mes',"Presupuesto C'26","Real C'26",'% Cumplimiento'], rows)
+  } else {
+    const cfg = PRES_ASESORES_CFG.find(a=>a.clave===presActiveSubtab)
+    const rows = presupuesto_asesores_data.filter(r=>r.asesor_clave===presActiveSubtab).sort((a,b)=>a.mes-b.mes).map(r=>
+      [MESES_NOMBRE_PRES[r.mes-1], fmtValor(r.real_c25), fmtValor(r.presup_c26), fmtValor(r.real_c26), fmtValor(r.prom_c26)]
+    )
+    exportModuloPDF(`Presupuesto — ${cfg?.nombre||presActiveSubtab}`, ['Mes',"Real C'25","Presup C'26","Real C'26","Prom C'26"], rows)
+  }
+}
+
+let presChartInstance = null
+function presRenderGraficaMensual(){
+  const script = document.createElement('script')
+  const draw = () => {
+    const ctx = document.getElementById('pres-chart-mensual')
+    if(!ctx || typeof Chart === 'undefined') return
+    const presup = MESES_LABEL.map((_,i)=>{
+      const row = presupuesto_data.find(r=>r.mes===i+1)
+      return row ? parseFloat(row.presupuesto)||0 : 0
+    })
+    const real = MESES_LABEL.map((_,i)=>{
+      const row = presupuesto_data.find(r=>r.mes===i+1)
+      return row ? parseFloat(row.real)||0 : 0
+    })
+    if(presChartInstance) presChartInstance.destroy()
+    presChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: MESES_LABEL, datasets: [
+        {label:"Presupuesto C'26", data: presup, backgroundColor:'#B5D4F4'},
+        {label:"Real C'26", data: real, backgroundColor:'#1B3A6B'}
+      ]},
+      options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}} }
+    })
+  }
+  if(typeof Chart !== 'undefined'){ draw(); return }
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js'
+  script.onload = draw
+  script.onerror = () => showToast('No se pudo cargar el motor de gráficas','⚠️')
+  document.head.appendChild(script)
 }
 
 async function presUpdateReal(mes, id, valor){
