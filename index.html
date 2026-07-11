@@ -1289,7 +1289,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="pres-subtabs" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;border-bottom:2px solid var(--border);padding-bottom:0"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div style="font-size:14px;font-weight:600" id="pres-subtab-title">Cumplimiento mensual 2026
-        <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:11px;font-weight:500;color:#1D9E75;margin-left:6px">✏️ Editable</span>
+        <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:14px;font-weight:700;color:#0F6E56;margin-left:8px;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>
       </div>
       <div style="display:flex;gap:8px">
         <button onclick="presExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
@@ -3663,7 +3663,7 @@ function fcRenderAsesor(clave, containerId){
     <div class="tbl-wrap">
       <div class="tbl-bar">
         <div class="sec-title">${items[0]?.asesor_nombre||clave} — Forecast 2026</div>
-        ${canEdit?'<span title="Celdas editables — haz clic en cualquier mes" style="font-size:11px;color:#1D9E75;font-weight:500">✏️ Editable</span>':''}
+        ${canEdit?'<span title="Celdas editables — haz clic en cualquier mes" style="font-size:14px;color:#0F6E56;font-weight:700;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>':''}
         <span class="results-label">${items.length} artículos</span>
         <button onclick="fcExportExcelAsesor('${clave}')" class="btn-export-xls" style="padding:5px 10px" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"/>Excel</button>
         <button onclick="fcExportPDFAsesor('${clave}')" class="btn-export-pdf" style="padding:5px 10px" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"/>PDF</button>
@@ -3691,6 +3691,7 @@ function fcRenderAsesor(clave, containerId){
                     ? `<td style="text-align:center;padding:3px"><input type="number" value="${v}" min="0" step="1"
                         data-id="${r.id}" data-mes="${m}"
                         oninput="fcMarkDirty('${clave}',this)"
+                        onfocus="this.select()" onclick="this.select()"
                         onchange="fcCellChange('${r.id}','${m}',this.value,'${clave}')"
                         style="width:44px;text-align:center;padding:3px;border:1px solid var(--border2);border-radius:4px;font-size:11px;font-family:var(--mono);background:${v>0?'var(--surface2)':'var(--bg)'};color:${color}"></td>`
                     : `<td style="text-align:center;font-size:11px;color:${color}">${v||'—'}</td>`
@@ -3798,6 +3799,7 @@ function fcRenderTablaAsesor(clave, items, canEdit, container){
                     ? `<td style="text-align:center;padding:3px"><input type="number" value="${v}" min="0" step="1"
                         data-id="${r.id}" data-mes="${m}"
                         oninput="fcMarkDirty('${clave}',this)"
+                        onfocus="this.select()" onclick="this.select()"
                         onchange="fcCellChange('${r.id}','${m}',this.value,'${clave}')"
                         style="width:44px;text-align:center;padding:3px;border:1px solid var(--border2);border-radius:4px;font-size:11px;font-family:var(--mono);background:${v>0?'var(--surface2)':'var(--bg)'};color:${color}"></td>`
                     : `<td style="text-align:center;font-size:11px;color:${color}">${v||'—'}</td>`
@@ -3837,11 +3839,11 @@ function presSwitchSubtab(clave){
   document.querySelectorAll('.pres-subtab').forEach(el=>el.classList.toggle('active', el.dataset.clave===clave))
   const titleEl = document.getElementById('pres-subtab-title')
   if(clave==='general'){
-    if(titleEl) titleEl.innerHTML = `Cumplimiento mensual 2026 <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:11px;font-weight:500;color:#1D9E75;margin-left:6px">✏️ Editable</span>`
+    if(titleEl) titleEl.innerHTML = `Cumplimiento mensual 2026 <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:14px;font-weight:700;color:#0F6E56;margin-left:8px;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>`
     renderPresupuesto()
   } else {
     const cfg = PRES_ASESORES_CFG.find(a=>a.clave===clave)
-    if(titleEl) titleEl.innerHTML = `Presupuesto — ${esc(cfg?.nombre||clave)} <span title="Haz clic en la columna REAL C'26 para editarla" style="font-size:11px;font-weight:500;color:#1D9E75;margin-left:6px">✏️ Editable</span>`
+    if(titleEl) titleEl.innerHTML = `Presupuesto — ${esc(cfg?.nombre||clave)} <span title="Haz clic en la columna REAL C'26 para editarla" style="font-size:14px;font-weight:700;color:#0F6E56;margin-left:8px;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>`
     presRenderAsesorTabla(clave)
   }
 }
@@ -3882,6 +3884,7 @@ function presRenderAsesorTabla(clave){
                 style="width:100%;text-align:right;padding:4px 6px;border:1px solid ${tiene?'#1D9E75':'#D6E3F0'};
                 border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:600;
                 color:${tiene?'#1D9E75':'#999'};background:transparent"
+                onfocus="this.select()" onclick="this.select()"
                 onchange="presUpdateRealAsesor('${clave}',${r.mes},this.value)">
             </td>
             <td style="padding:6px 8px;text-align:right;color:#666">${fmtK(r.prom_c26)}</td>
@@ -4012,6 +4015,7 @@ function renderPresupuesto(){
                 border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:600;
                 color:${tiene?'#1D9E75':'#999'};background:transparent;
                 -webkit-appearance:none;-moz-appearance:textfield;appearance:textfield"
+                onfocus="this.select()" onclick="this.select()"
                 onchange="presUpdateReal(${MES_IDX[f.mes]},'${mesId}',this.value)">
             </td>
             <td style="padding:6px 8px;text-align:center">
