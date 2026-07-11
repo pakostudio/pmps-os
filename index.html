@@ -1006,14 +1006,44 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--muted)">FOTO</th>
           <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--muted)">EQUIPO</th>
           <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--muted)">CÓDIGO</th>
           <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--muted)">PROVEEDOR</th>
+          <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--muted)">UBICACIÓN</th>
           <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:600;color:var(--muted)">STOCK</th>
           <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:600;color:var(--muted)">ESTADO</th>
+          <th></th>
         </tr></thead>
         <tbody id="eq-tbody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <div id="modal-eq-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:center;justify-content:center;padding:8px">
+    <div style="background:#fff;border-radius:16px;width:440px;max-width:95vw;max-height:calc(100vh - 16px);overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:600">Editar equipo</div>
+        <button onclick="document.getElementById('modal-eq-edit').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+      </div>
+      <div style="padding:16px 20px">
+        <div style="text-align:center;margin-bottom:14px">
+          <img id="eq-edit-foto-preview" src="" style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--border);display:none;margin:0 auto 8px">
+          <div id="eq-edit-foto-placeholder" style="width:120px;height:120px;border-radius:10px;border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;color:var(--muted);font-size:11px">Sin foto</div>
+          <label style="display:inline-block;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);font-size:12px;font-weight:500;cursor:pointer">
+            📷 Subir foto
+            <input type="file" accept="image/*" id="eq-edit-foto-input" style="display:none" onchange="eqFotoSeleccionada(this)">
+          </label>
+        </div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Ubicación</label>
+          <input type="text" id="eq-edit-ubicacion" placeholder="Ej. Almacén / Covacha / Cliente X" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:4px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Notas</label>
+          <textarea id="eq-edit-notas" rows="2" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></textarea></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--border)">
+        <button onclick="document.getElementById('modal-eq-edit').style.display='none'" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
+        <button onclick="eqSaveEdit()" style="padding:8px 16px;border-radius:8px;border:none;background:#1B3A6B;color:#fff;font-family:var(--font);font-weight:500;cursor:pointer">💾 Guardar</button>
+      </div>
     </div>
   </div>
 
@@ -1090,6 +1120,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button class="tab-btn" onclick="switchTab2(this,'fc-asa');if(forecast_data.length)fcRenderAsesor('ASA','fc-tabla-asa')">Arturo</button>
       <button class="tab-btn" onclick="switchTab2(this,'fc-jgt');if(forecast_data.length)fcRenderAsesor('JGT','fc-tabla-jgt')">Jesús</button>
       <button class="tab-btn" onclick="switchTab2(this,'fc-mtos');if(forecast_data.length)fcRenderAsesor('MTOS','fc-tabla-mtos')">Mary Tere</button>
+      <button class="tab-btn" onclick="switchTab2(this,'fc-alyd');if(forecast_data.length)fcRenderAsesor('ALYD','fc-tabla-alyd')">ALyD</button>
+      <button class="tab-btn" onclick="switchTab2(this,'fc-pacifico');if(forecast_data.length)fcRenderAsesor('PACIFICO','fc-tabla-pacifico')">Pacífico</button>
     </div>
     <div class="tab-panel active" id="fc-global">
       <div class="kpi-grid" id="fc-kpis" style="margin-bottom:14px"></div>
@@ -1130,6 +1162,16 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:8px 0;font-weight:normal;text-transform:none;letter-spacing:0">
         <input type="checkbox" id="fc-solo-datos-mtos" onchange="fcRenderAsesor('MTOS','fc-tabla-mtos')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
       <div id="fc-tabla-mtos"></div>
+    </div>
+    <div class="tab-panel" id="fc-alyd">
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:8px 0;font-weight:normal;text-transform:none;letter-spacing:0">
+        <input type="checkbox" id="fc-solo-datos-alyd" onchange="fcRenderAsesor('ALYD','fc-tabla-alyd')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
+      <div id="fc-tabla-alyd"></div>
+    </div>
+    <div class="tab-panel" id="fc-pacifico">
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:8px 0;font-weight:normal;text-transform:none;letter-spacing:0">
+        <input type="checkbox" id="fc-solo-datos-pacifico" onchange="fcRenderAsesor('PACIFICO','fc-tabla-pacifico')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
+      <div id="fc-tabla-pacifico"></div>
     </div>
   </div>
 
@@ -3516,6 +3558,8 @@ async function loadForecast(){
     fcRenderAsesor('ASA','fc-tabla-asa')
     fcRenderAsesor('JGT','fc-tabla-jgt')
     fcRenderAsesor('MTOS','fc-tabla-mtos')
+    fcRenderAsesor('ALYD','fc-tabla-alyd')
+    fcRenderAsesor('PACIFICO','fc-tabla-pacifico')
   } catch(e){ showToast('Error cargando forecast','⚠️') }
   setLoading(false)
 }
@@ -3523,7 +3567,7 @@ async function loadForecast(){
 function fcTotal(r){ return MESES_FC.reduce((s,m)=>s+(parseFloat(r[m])||0),0) }
 
 function fcRenderKpis(){
-  const asesores = ['CORP','ASA','JGT','MTOS','ALYD']
+  const asesores = ['CORP','ASA','JGT','MTOS','ALYD','PACIFICO']
   const kpis = document.getElementById('fc-kpis')
   if(!kpis) return
   kpis.innerHTML = asesores.map(a=>{
@@ -3540,7 +3584,7 @@ function fcRenderGlobal(){
   const soloDatos = document.getElementById('fc-solo-datos')?.checked||false
   const body = document.getElementById('fc-global-body')
   if(!body) return
-  const asesores = ['CORP','ASA','JGT','MTOS','ALYD']
+  const asesores = ['CORP','ASA','JGT','MTOS','ALYD','PACIFICO']
   const AV_C = AV_COLOR
   body.innerHTML = asesores.map(a=>{
     let items = forecast_data.filter(r=>r.asesor_clave===a)
@@ -4281,15 +4325,72 @@ function eqFilter(){
   if(countEl) countEl.textContent = data.length+' equipos'
   const tbody = document.getElementById('eq-tbody')
   if(!tbody) return
-  if(!data.length){ tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">Sin equipos</td></tr>'; return }
+  if(!data.length){ tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">Sin equipos</td></tr>'; return }
+  const esAdmin = currentUser?.rol==='admin'
   tbody.innerHTML = data.map(e=>`
     <tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:8px 12px;font-weight:500">${e.nombre}</td>
+      <td style="padding:6px 12px">${e.imagen_url?`<img src="${e.imagen_url}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">`:`<div style="width:36px;height:36px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:14px">🖼️</div>`}</td>
+      <td style="padding:8px 12px;font-weight:500">${esc(e.nombre)}</td>
       <td style="padding:8px 12px;font-size:11px;font-family:monospace;color:var(--muted)">${e.codigo_interno||e.codigo_microsip||'—'}</td>
-      <td style="padding:8px 12px;font-size:12px">${e.proveedor||'—'}</td>
+      <td style="padding:8px 12px;font-size:12px">${esc(e.proveedor||'—')}</td>
+      <td style="padding:8px 12px;font-size:12px;color:${e.ubicacion?'inherit':'var(--muted)'}">${esc(e.ubicacion||'—')}</td>
       <td style="padding:8px 12px;text-align:center">${e.stock_disponible||0}</td>
       <td style="padding:8px 12px"><span style="padding:2px 8px;border-radius:99px;font-size:11px;background:#E1F5EE;color:#085041">Disponible</span></td>
+      <td style="padding:8px 12px;text-align:center">${esAdmin?`<span onclick="eqOpenEdit('${e.id}')" style="cursor:pointer" title="Editar">✏️</span>`:''}</td>
     </tr>`).join('')
+}
+
+let eqEditingId = null, eqFotoFile = null
+function eqOpenEdit(id){
+  const e = equipos_data.find(x=>String(x.id)===String(id)); if(!e) return
+  eqEditingId = id
+  eqFotoFile = null
+  document.getElementById('eq-edit-ubicacion').value = e.ubicacion||''
+  document.getElementById('eq-edit-notas').value = e.notas||''
+  const preview = document.getElementById('eq-edit-foto-preview')
+  const placeholder = document.getElementById('eq-edit-foto-placeholder')
+  if(e.imagen_url){ preview.src = e.imagen_url; preview.style.display='block'; placeholder.style.display='none' }
+  else { preview.style.display='none'; placeholder.style.display='flex' }
+  document.getElementById('modal-eq-edit').style.display='flex'
+}
+
+function eqFotoSeleccionada(input){
+  const file = input.files[0]; if(!file) return
+  eqFotoFile = file
+  const reader = new FileReader()
+  reader.onload = ev => {
+    const preview = document.getElementById('eq-edit-foto-preview')
+    preview.src = ev.target.result
+    preview.style.display = 'block'
+    document.getElementById('eq-edit-foto-placeholder').style.display = 'none'
+  }
+  reader.readAsDataURL(file)
+}
+
+async function eqSaveEdit(){
+  if(!eqEditingId) return
+  try {
+    let imagen_url = equipos_data.find(x=>String(x.id)===String(eqEditingId))?.imagen_url || null
+    if(eqFotoFile){
+      const ext = (eqFotoFile.name.split('.').pop()||'jpg').toLowerCase()
+      const path = `${eqEditingId}-${Date.now()}.${ext}`
+      const upRes = await fetch(`${SB_URL}/storage/v1/object/equipos-fotos/${path}`, {
+        method:'POST',
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': eqFotoFile.type||'image/jpeg' },
+        body: eqFotoFile
+      })
+      if(!upRes.ok) throw new Error('No se pudo subir la foto: '+await upRes.text())
+      imagen_url = `${SB_URL}/storage/v1/object/public/equipos-fotos/${path}`
+    }
+    const ubicacion = document.getElementById('eq-edit-ubicacion').value.trim()
+    const notas = document.getElementById('eq-edit-notas').value.trim()
+    await sbPatch('equipos_comodato', eqEditingId, { ubicacion, notas, imagen_url })
+    const idx = equipos_data.findIndex(x=>String(x.id)===String(eqEditingId))
+    if(idx>=0) equipos_data[idx] = { ...equipos_data[idx], ubicacion, notas, imagen_url }
+    document.getElementById('modal-eq-edit').style.display='none'
+    eqFilter()
+    showToast('Equipo actualizado ✓')
+  } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
 
 // ═══════════════════════════════════════════
