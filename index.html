@@ -1152,6 +1152,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <button onclick="vhExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
       <button onclick="vhExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
+      <button onclick="vhOpenGraficas()" class="btn-export-xls" style="border-color:#B5D4F4;color:#1B3A6B">📊 Ver gráficas</button>
       <span class="results-label" id="vh-count">—</span>
     </div>
     <table style="width:100%;border-collapse:collapse">
@@ -1165,6 +1166,27 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </tr></thead>
       <tbody id="vh-tbody"></tbody>
     </table>
+  </div>
+
+  <div id="modal-vh-graficas" style="display:none;position:fixed;inset:0;background:rgba(20,20,20,0.55);z-index:999;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#fff;border-radius:14px;max-width:1000px;width:100%;max-height:88vh;overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:16px;font-weight:700">📊 Gráficas de Ventas Históricas</div>
+        <button onclick="document.getElementById('modal-vh-graficas').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--muted)">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600;color:var(--muted);align-self:center">Agrupar por:</span>
+        <select class="fsel" id="vh-graf-dim" onchange="vhRenderGrafica()">
+          <option value="cliente">Cliente</option>
+          <option value="asesor_nombre">Asesor</option>
+          <option value="anio">Año</option>
+          <option value="sector">Sector</option>
+        </select>
+      </div>
+      <div class="tbl-wrap"><div class="tbl-bar"><div class="sec-title" id="vh-graf-title">Ventas por Cliente</div></div>
+        <canvas id="vh-chart" style="max-height:400px;padding:12px"></canvas>
+      </div>
+    </div>
   </div>
 
   <!-- Modal editar venta histórica (admin) -->
@@ -3827,12 +3849,16 @@ function presRenderAsesorTabla(clave){
 async function presUpdateRealAsesor(clave, mes, valor){
   const num = parseFloat(valor)||0
   try {
-    await sbPatch('presupuesto_asesores', `asesor_clave=eq.${clave}&mes=eq.${mes}`, {real_c26:num, updated_at:new Date().toISOString()})
+    const res = await fetch(`${SB_URL}/rest/v1/presupuesto_asesores?asesor_clave=eq.${encodeURIComponent(clave)}&mes=eq.${mes}`, {
+      method:'PATCH', headers:{...HDR,'Prefer':'return=minimal'},
+      body: JSON.stringify({real_c26:num, updated_at:new Date().toISOString()})
+    })
+    if(!res.ok) throw new Error(await res.text())
     const row = presupuesto_asesores_data.find(r=>r.asesor_clave===clave && r.mes===mes)
     if(row) row.real_c26 = num
     showToast('Actualizado','✅')
     presRenderAsesorTabla(clave)
-  } catch(e){ showToast('Error al guardar','⚠️') }
+  } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
 
 function renderPresupuesto(){
@@ -4318,6 +4344,39 @@ function vhExportExcel(){
 function vhExportPDF(){
   const rows = ventas_data.map(r=>[r.cliente||'', r.asesor_nombre||'', r.anio||'', fmtValor(parseFloat(r.total||0))])
   exportModuloPDF('Ventas Históricas', ['Cliente','Asesor','Año','Total'], rows)
+}
+
+const VH_DIM_LABEL = {cliente:'Cliente', asesor_nombre:'Asesor', anio:'Año', sector:'Sector'}
+let vhChartInstance = null
+function vhOpenGraficas(){
+  document.getElementById('modal-vh-graficas').style.display = 'flex'
+  vhRenderGrafica()
+}
+function vhRenderGrafica(){
+  const dim = document.getElementById('vh-graf-dim').value
+  document.getElementById('vh-graf-title').textContent = `Ventas por ${VH_DIM_LABEL[dim]}`
+  const agg = {}
+  ventas_data.forEach(r=>{
+    const key = String(r[dim] ?? r.estado ?? 'Sin dato') || 'Sin dato'
+    agg[key] = (agg[key]||0) + (parseFloat(r.total)||0)
+  })
+  const entries = Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,15)
+  const draw = () => {
+    const ctx = document.getElementById('vh-chart')
+    if(!ctx || typeof Chart === 'undefined') return
+    if(vhChartInstance) vhChartInstance.destroy()
+    vhChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: entries.map(e=>e[0]), datasets: [{ label:'Ventas totales', data: entries.map(e=>e[1]), backgroundColor:'#1B3A6B' }] },
+      options: { responsive:true, indexAxis: dim==='anio'?'x':'y', plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+    })
+  }
+  if(typeof Chart !== 'undefined'){ draw(); return }
+  const script = document.createElement('script')
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js'
+  script.onload = draw
+  script.onerror = () => showToast('No se pudo cargar el motor de gráficas','⚠️')
+  document.head.appendChild(script)
 }
 
 let vhEditingId = null
