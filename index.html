@@ -8,20 +8,26 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#F7F6F3;--surface:#FFFFFF;--surface2:#F0EEE9;
-  --border:#E2DFD8;--border2:#D0CCC3;--text:#1C1A17;--muted:#8A8780;
-  --accent:#1B3A6B;--accent-light:#E8F4FD;--accent-muted:#1B3A6B;
+  --bg:#F2F6FB;--surface:#FFFFFF;--surface2:#E9F1FA;
+  --border:#D6E3F0;--border2:#B9CEE5;--text:#132338;--muted:#6C7F96;
+  --accent:#123A63;--accent-light:#E4F2FC;--accent-muted:#123A63;--sky:#29ABE2;
   --amber:#854F0B;--amber-bg:#FAEEDA;--red:#A32D2D;--red-bg:#FCEBEB;
   --blue:#185FA5;--blue-bg:#E6F1FB;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
 }
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
 
 /* LOGIN */
-#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
-.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:380px;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
-.login-logo{width:44px;height:44px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:18px;margin-bottom:24px}
-.login-title{font-size:20px;font-weight:600;margin-bottom:6px}
-.login-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#EAF3FC 0%,#F2F6FB 55%,#E4EFFB 100%)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:40px;width:400px;box-shadow:0 8px 32px rgba(18,58,99,0.10)}
+.login-logo-wrap{display:flex;justify-content:center;margin-bottom:18px}
+.login-logo-mark{width:76px;height:76px;position:relative}
+.login-logo-mark .drop-outer{position:absolute;width:100%;height:100%;background:var(--accent);border-radius:50% 50% 50% 4%;transform:rotate(45deg);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.login-logo-mark .drop-outer{border-radius:50% 50% 4% 50%}
+.login-logo-mark .drop-inner{position:absolute;width:34%;height:34%;left:33%;top:40%;background:var(--sky);border-radius:50% 50% 4% 50%;transform:rotate(45deg)}
+.login-logo-mark .drop-base{position:absolute;width:56%;height:22%;left:22%;bottom:2%;background:var(--sky);border-radius:0 0 50% 50%}
+.login-wordmark{text-align:center;font-size:26px;font-weight:700;letter-spacing:.02em;color:var(--accent);margin-bottom:2px}
+.login-title{font-size:16px;font-weight:600;margin-bottom:6px;text-align:center;color:var(--muted)}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:28px;text-align:center}
 
 /* FORMS */
 label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
@@ -271,8 +277,15 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-logo">P</div>
-    <div class="login-title">PMPS CRM</div>
+    <div class="login-logo-wrap">
+      <div class="login-logo-mark">
+        <div class="drop-outer"></div>
+        <div class="drop-inner"></div>
+        <div class="drop-base"></div>
+      </div>
+    </div>
+    <div class="login-wordmark">PMPS<span style="font-size:12px;vertical-align:super">®</span></div>
+    <div class="login-title">PMPS CRM · Operadora Química Menlun</div>
     <div class="login-sub">Selecciona tu nombre e ingresa la clave del equipo</div>
     <label>Nombre</label>
     <select id="login-user">
@@ -1103,7 +1116,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <div id="rf-asesor-wrap" style="margin-bottom:12px">
         <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Asesor responsable</label>
-        <input type="text" id="rf-asesor" readonly style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#F0EEE9;margin-top:4px">
+        <input type="text" id="rf-asesor" readonly style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#E9F1FA;margin-top:4px">
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
         <button onclick="switchTab2(document.querySelector('#tab-rep-fo-wrap .tab-btn'),'rtab-lista')" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
@@ -2249,7 +2262,7 @@ function renderRepKanban(){
   const el = document.getElementById('rep-kanban-board');
   if(!el) return;
   const etapas = ['Prospecto','Contactado','Propuesta','Negociación','Cerrado ganado'];
-  const colores = {'Prospecto':'#8A8780','Contactado':'#185FA5','Propuesta':'#854F0B','Negociación':'#533AB7','Cerrado ganado':'#0F6E56'};
+  const colores = {'Prospecto':'#6C7F96','Contactado':'#185FA5','Propuesta':'#854F0B','Negociación':'#533AB7','Cerrado ganado':'#0F6E56'};
   el.innerHTML = etapas.map(etapa=>{
     const etapaLeads = leads.filter(l=>l.etapa===etapa);
     const total = etapaLeads.reduce((s,l)=>s+(parseFloat(l.valor||0)||0),0);
@@ -2955,7 +2968,7 @@ function renderEtapasBars(){
   const el = document.getElementById('admin-etapas-bars');
   if(!el) return;
   const etapas = ['Prospecto','Contactado','Propuesta','Negociación','Cerrado ganado','Cerrado perdido'];
-  const colors = {'Prospecto':'#8A8780','Contactado':'#185FA5','Propuesta':'#854F0B','Negociación':'#533AB7','Cerrado ganado':'#0F6E56','Cerrado perdido':'#A32D2D'};
+  const colors = {'Prospecto':'#6C7F96','Contactado':'#185FA5','Propuesta':'#854F0B','Negociación':'#533AB7','Cerrado ganado':'#0F6E56','Cerrado perdido':'#A32D2D'};
   const counts = {};
   etapas.forEach(e=>counts[e]=0);
   leads.forEach(l=>{ if(counts[l.etapa]!==undefined) counts[l.etapa]++; });
@@ -2978,7 +2991,7 @@ function renderAdminKanban(){
   const el = document.getElementById('admin-kanban');
   if(!el) return;
   const etapas = ['Prospecto','Contactado','Propuesta','Negociación','Cerrado ganado'];
-  const colors = {'Prospecto':'#8A8780','Contactado':'#185FA5','Propuesta':'#854F0B','Negociación':'#533AB7','Cerrado ganado':'#0F6E56'};
+  const colors = {'Prospecto':'#6C7F96','Contactado':'#185FA5','Propuesta':'#854F0B','Negociación':'#533AB7','Cerrado ganado':'#0F6E56'};
   el.innerHTML = etapas.map(etapa=>{
     const etapaLeads = leads.filter(l=>l.etapa===etapa);
     const total = etapaLeads.reduce((s,l)=>s+(parseFloat(l.valor||0)||0),0);
@@ -3471,11 +3484,11 @@ function exportModuloPDF(title, headers, rows){
   <style>
     body{font-family:Arial,sans-serif;font-size:11px;padding:24px;color:#1C1A17}
     h1{color:#1B3A6B;font-size:16px;margin-bottom:4px}
-    .sub{color:#8A8780;font-size:11px;margin-bottom:16px}
+    .sub{color:#6C7F96;font-size:11px;margin-bottom:16px}
     table{width:100%;border-collapse:collapse}
     th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
     th{background:#EEF2F8;color:#1B3A6B;font-size:10px;text-transform:uppercase}
-    tr:nth-child(even) td{background:#F7F6F3}
+    tr:nth-child(even) td{background:#F2F6FB}
   </style></head>
   <body>
     <h1>PMPS® — ${esc(title)}</h1>
@@ -3850,13 +3863,13 @@ function presRenderAsesorTabla(clave){
           const presup=parseFloat(r.presup_c26)||0, real=parseFloat(r.real_c26)||0, tiene=real>0
           const pctRow = presup>0 && tiene ? Math.round(real/presup*100) : null
           const col=pctRow>=100?'#1D9E75':pctRow>=75?'#854F0B':'#A32D2D'
-          return `<tr style="background:${i%2===0?'#fff':'#F7F6F3'};border-bottom:0.5px solid #E2DFD8">
-            <td style="padding:6px 10px;font-weight:700;border-right:1px solid #E2DFD8">${MESES_LABEL[r.mes-1]}</td>
+          return `<tr style="background:${i%2===0?'#fff':'#F2F6FB'};border-bottom:0.5px solid #D6E3F0">
+            <td style="padding:6px 10px;font-weight:700;border-right:1px solid #D6E3F0">${MESES_LABEL[r.mes-1]}</td>
             <td style="padding:6px 8px;text-align:right;color:#999">${fmtK(r.real_c25)}</td>
-            <td style="padding:6px 8px;text-align:right;font-weight:600;border-left:2px solid #E2DFD8;color:#1a3a6b">${fmtK(presup)}</td>
+            <td style="padding:6px 8px;text-align:right;font-weight:600;border-left:2px solid #D6E3F0;color:#1a3a6b">${fmtK(presup)}</td>
             <td style="padding:3px 4px;background:${tiene?'#f0faf5':'#fff'}">
               <input type="number" value="${real||''}" placeholder="—"
-                style="width:100%;text-align:right;padding:4px 6px;border:1px solid ${tiene?'#1D9E75':'#E2DFD8'};
+                style="width:100%;text-align:right;padding:4px 6px;border:1px solid ${tiene?'#1D9E75':'#D6E3F0'};
                 border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:600;
                 color:${tiene?'#1D9E75':'#999'};background:transparent"
                 onchange="presUpdateRealAsesor('${clave}',${r.mes},this.value)">
@@ -3971,8 +3984,8 @@ function renderPresupuesto(){
           const pctRow=tiene?Math.round(r26/f.presup*100):null
           const col=pctRow>=100?'#1D9E75':pctRow>=75?'#854F0B':'#A32D2D'
           const mesId=presupuesto_data.find(p=>p.mes===MES_IDX[f.mes])?.id||''
-          return `<tr style="background:${i%2===0?'#fff':'#F7F6F3'};border-bottom:0.5px solid #E2DFD8">
-            <td style="padding:6px 10px;font-weight:700;border-right:1px solid #E2DFD8">${f.mes}</td>
+          return `<tr style="background:${i%2===0?'#fff':'#F2F6FB'};border-bottom:0.5px solid #D6E3F0">
+            <td style="padding:6px 10px;font-weight:700;border-right:1px solid #D6E3F0">${f.mes}</td>
             <td style="padding:6px 8px;text-align:right;color:#bbb">${fmtK(f.r17)}</td>
             <td style="padding:6px 8px;text-align:right;color:#bbb">${fmtK(f.r18)}</td>
             <td style="padding:6px 8px;text-align:right;color:#aaa">${fmtK(f.r19)}</td>
@@ -3982,10 +3995,10 @@ function renderPresupuesto(){
             <td style="padding:6px 8px;text-align:right;color:#666">${fmtK(f.r23)}</td>
             <td style="padding:6px 8px;text-align:right;color:#555">${fmtK(f.r24)}</td>
             <td style="padding:6px 8px;text-align:right;color:#444">${fmtK(f.r25)}</td>
-            <td style="padding:6px 8px;text-align:right;font-weight:600;border-left:2px solid #E2DFD8;color:#1a3a6b">${fmtK(f.presup)}</td>
+            <td style="padding:6px 8px;text-align:right;font-weight:600;border-left:2px solid #D6E3F0;color:#1a3a6b">${fmtK(f.presup)}</td>
             <td style="padding:3px 4px;background:${tiene?'#f0faf5':'#fff'}">
               <input type="number" value="${r26||''}" placeholder="—"
-                style="width:100%;text-align:right;padding:4px 6px;border:1px solid ${tiene?'#1D9E75':'#E2DFD8'};
+                style="width:100%;text-align:right;padding:4px 6px;border:1px solid ${tiene?'#1D9E75':'#D6E3F0'};
                 border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:600;
                 color:${tiene?'#1D9E75':'#999'};background:transparent;
                 -webkit-appearance:none;-moz-appearance:textfield;appearance:textfield"
@@ -4296,7 +4309,7 @@ function verProducto(id){
       <span style="padding:2px 9px;border-radius:99px;font-size:11px;font-weight:500;background:${color}20;color:${color}">${p.familia||''}</span>
       <span style="padding:2px 9px;border-radius:99px;font-size:11px;background:var(--surface2);color:var(--muted)">${p.clave||''}</span>
     </div>
-    ${p.descripcion?`<div style="font-size:12px;color:var(--muted);line-height:1.6;background:#F7F6F3;border-radius:7px;padding:10px 12px;margin-bottom:12px">${p.descripcion}</div>`:''}
+    ${p.descripcion?`<div style="font-size:12px;color:var(--muted);line-height:1.6;background:#F2F6FB;border-radius:7px;padding:10px 12px;margin-bottom:12px">${p.descripcion}</div>`:''}
     <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Uso / Dosificación</div>
     <div style="font-size:13px;font-weight:500;margin-bottom:12px">${p.uso_dosificacion||'—'}</div>
     ${p.sector_aplicacion?.length?`
@@ -4708,8 +4721,8 @@ function dirSortBy(col){
 }
 
 function dirTierBadge(t){
-  const map = {'Platino':['#E6F1FB','#0C447C'],'Oro':['#FAEEDA','#633806'],'Plata':['#F0EEE9','#8A8780'],'Bronce':['#FAECE7','#4A1B0C']}
-  const [bg,col] = map[t]||['#F0EEE9','#8A8780']
+  const map = {'Platino':['#E6F1FB','#0C447C'],'Oro':['#FAEEDA','#633806'],'Plata':['#E9F1FA','#6C7F96'],'Bronce':['#FAECE7','#4A1B0C']}
+  const [bg,col] = map[t]||['#E9F1FA','#6C7F96']
   return `<span style="padding:2px 9px;border-radius:99px;font-size:11px;font-weight:500;background:${bg};color:${col}">${t||'—'}</span>`
 }
 
