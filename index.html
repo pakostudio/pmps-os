@@ -3559,6 +3559,14 @@ const PRES_ASESORES_CFG = [
   {clave:'DISTRIBUIDOR', nombre:'Distribuidor'},
 ]
 
+// Al hacer clic en la etiqueta "✏️ Editable": lleva y enfoca la primera celda editable
+function presFocusFirstEditable(){
+  const inp = document.querySelector('#pres-tabla input[type=number]')
+  if(!inp){ showToast('No hay celdas para editar en esta vista','⚠️'); return }
+  inp.scrollIntoView({behavior:'smooth', block:'center'})
+  setTimeout(()=>{ inp.focus(); inp.select() }, 300)
+}
+
 // Abrir modal de gráficas de presupuesto
 function presOpenGraficas(){
   document.getElementById('modal-pres-graficas').style.display = 'flex'
@@ -3839,11 +3847,11 @@ function presSwitchSubtab(clave){
   document.querySelectorAll('.pres-subtab').forEach(el=>el.classList.toggle('active', el.dataset.clave===clave))
   const titleEl = document.getElementById('pres-subtab-title')
   if(clave==='general'){
-    if(titleEl) titleEl.innerHTML = `Cumplimiento mensual 2026 <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:14px;font-weight:700;color:#0F6E56;margin-left:8px;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>`
+    if(titleEl) titleEl.innerHTML = `Cumplimiento mensual 2026 <span onclick="presFocusFirstEditable()" title="Haz clic aquí o en cualquier celda de la columna REAL C'26 para editarla" style="cursor:pointer;font-size:14px;font-weight:700;color:#0F6E56;margin-left:8px;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>`
     renderPresupuesto()
   } else {
     const cfg = PRES_ASESORES_CFG.find(a=>a.clave===clave)
-    if(titleEl) titleEl.innerHTML = `Presupuesto — ${esc(cfg?.nombre||clave)} <span title="Haz clic en la columna REAL C'26 para editarla" style="font-size:14px;font-weight:700;color:#0F6E56;margin-left:8px;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>`
+    if(titleEl) titleEl.innerHTML = `Presupuesto — ${esc(cfg?.nombre||clave)} <span onclick="presFocusFirstEditable()" title="Haz clic aquí o en la columna REAL C'26 para editarla" style="cursor:pointer;font-size:14px;font-weight:700;color:#0F6E56;margin-left:8px;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>`
     presRenderAsesorTabla(clave)
   }
 }
