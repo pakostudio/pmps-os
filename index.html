@@ -19,12 +19,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 /* LOGIN */
 #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#EAF3FC 0%,#F2F6FB 55%,#E4EFFB 100%)}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:40px;width:400px;box-shadow:0 8px 32px rgba(18,58,99,0.10)}
-.login-logo-wrap{display:flex;justify-content:center;margin-bottom:18px}
-.login-logo-mark{width:76px;height:76px;position:relative}
-.login-logo-mark .drop-outer{position:absolute;width:100%;height:100%;background:var(--accent);border-radius:50% 50% 50% 4%;transform:rotate(45deg);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
-.login-logo-mark .drop-outer{border-radius:50% 50% 4% 50%}
-.login-logo-mark .drop-inner{position:absolute;width:34%;height:34%;left:33%;top:40%;background:var(--sky);border-radius:50% 50% 4% 50%;transform:rotate(45deg)}
-.login-logo-mark .drop-base{position:absolute;width:56%;height:22%;left:22%;bottom:2%;background:var(--sky);border-radius:0 0 50% 50%}
+.login-logo-wrap{display:flex;justify-content:center;margin-bottom:14px}
+.login-logo-mark{width:86px;height:auto}
 .login-wordmark{text-align:center;font-size:26px;font-weight:700;letter-spacing:.02em;color:var(--accent);margin-bottom:2px}
 .login-title{font-size:16px;font-weight:600;margin-bottom:6px;text-align:center;color:var(--muted)}
 .login-sub{font-size:13px;color:var(--muted);margin-bottom:28px;text-align:center}
@@ -278,11 +274,24 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo-wrap">
-      <div class="login-logo-mark">
-        <div class="drop-outer"></div>
-        <div class="drop-inner"></div>
-        <div class="drop-base"></div>
-      </div>
+      <svg class="login-logo-mark" viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg">
+        <path d="M100 6
+                 C 62 52, 34 92, 34 136
+                 C 34 172, 64 198, 100 198
+                 C 136 198, 166 172, 166 136
+                 C 166 92, 138 52, 100 6 Z" fill="#123A63"/>
+        <path d="M100 100
+                 C 87 118, 80 132, 80 146
+                 C 80 161, 89 172, 100 172
+                 C 111 172, 120 161, 120 146
+                 C 120 132, 113 118, 100 100 Z" fill="#F2F6FB"/>
+        <path d="M100 112
+                 C 90 126, 85 137, 85 148
+                 C 85 159, 92 167, 100 167
+                 C 108 167, 115 159, 115 148
+                 C 115 137, 110 126, 100 112 Z" fill="#29ABE2"/>
+        <path d="M52 178 A 48 20 0 0 0 148 178 Z" fill="#29ABE2"/>
+      </svg>
     </div>
     <div class="login-wordmark">PMPS<span style="font-size:12px;vertical-align:super">®</span></div>
     <div class="login-title">PMPS CRM · Operadora Química Menlun</div>
