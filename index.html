@@ -3887,13 +3887,16 @@ function presRenderAsesorTabla(clave){
             <td style="padding:6px 10px;font-weight:700;border-right:1px solid #D6E3F0">${MESES_LABEL[r.mes-1]}</td>
             <td style="padding:6px 8px;text-align:right;color:#999">${fmtK(r.real_c25)}</td>
             <td style="padding:6px 8px;text-align:right;font-weight:600;border-left:2px solid #D6E3F0;color:#1a3a6b">${fmtK(presup)}</td>
-            <td style="padding:3px 4px;background:${tiene?'#f0faf5':'#fff'}">
-              <input type="number" value="${real||''}" placeholder="—"
-                style="width:100%;text-align:right;padding:4px 6px;border:1px solid ${tiene?'#1D9E75':'#D6E3F0'};
-                border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:600;
-                color:${tiene?'#1D9E75':'#999'};background:transparent"
-                onfocus="this.select()" onclick="this.select()"
-                onchange="presUpdateRealAsesor('${clave}',${r.mes},this.value)">
+            <td style="padding:3px 4px;background:${tiene?'#f0faf5':'#FFFCE8'}">
+              <div style="position:relative">
+                <input type="number" value="${real||''}" placeholder="Escribe aquí"
+                  style="width:100%;text-align:right;padding:5px 22px 5px 6px;border:2px solid ${tiene?'#1D9E75':'#EFB93A'};
+                  border-radius:5px;font-size:12px;font-family:var(--mono);font-weight:700;
+                  color:${tiene?'#0F6E56':'#7A5B00'};background:#fff;cursor:text"
+                  onfocus="this.select()" onclick="this.select()"
+                  onchange="presUpdateRealAsesor('${clave}',${r.mes},this.value)">
+                <span style="position:absolute;right:5px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:11px">✏️</span>
+              </div>
             </td>
             <td style="padding:6px 8px;text-align:right;color:#666">${fmtK(r.prom_c26)}</td>
             <td style="padding:6px 8px;text-align:center">
@@ -4017,14 +4020,17 @@ function renderPresupuesto(){
             <td style="padding:6px 8px;text-align:right;color:#555">${fmtK(f.r24)}</td>
             <td style="padding:6px 8px;text-align:right;color:#444">${fmtK(f.r25)}</td>
             <td style="padding:6px 8px;text-align:right;font-weight:600;border-left:2px solid #D6E3F0;color:#1a3a6b">${fmtK(f.presup)}</td>
-            <td style="padding:3px 4px;background:${tiene?'#f0faf5':'#fff'}">
-              <input type="number" value="${r26||''}" placeholder="—"
-                style="width:100%;text-align:right;padding:4px 6px;border:1px solid ${tiene?'#1D9E75':'#D6E3F0'};
-                border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:600;
-                color:${tiene?'#1D9E75':'#999'};background:transparent;
-                -webkit-appearance:none;-moz-appearance:textfield;appearance:textfield"
-                onfocus="this.select()" onclick="this.select()"
-                onchange="presUpdateReal(${MES_IDX[f.mes]},'${mesId}',this.value)">
+            <td style="padding:3px 4px;background:${tiene?'#f0faf5':'#FFFCE8'}">
+              <div style="position:relative">
+                <input type="number" value="${r26||''}" placeholder="Escribe aquí"
+                  style="width:100%;text-align:right;padding:5px 22px 5px 6px;border:2px solid ${tiene?'#1D9E75':'#EFB93A'};
+                  border-radius:5px;font-size:12px;font-family:var(--mono);font-weight:700;
+                  color:${tiene?'#0F6E56':'#7A5B00'};background:#fff;cursor:text;
+                  -webkit-appearance:none;-moz-appearance:textfield;appearance:textfield"
+                  onfocus="this.select()" onclick="this.select()"
+                  onchange="presUpdateReal(${MES_IDX[f.mes]},'${mesId}',this.value)">
+                <span style="position:absolute;right:5px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:11px">✏️</span>
+              </div>
             </td>
             <td style="padding:6px 8px;text-align:center">
               ${tiene?`<span style="padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;
