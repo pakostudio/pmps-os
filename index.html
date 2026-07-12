@@ -582,6 +582,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button onclick="switchAdminTab('todos-leads')" id="atab-todos-leads" class="atab">🎯 Todos los Leads</button>
         <button onclick="switchAdminTab('todos-clientes')" id="atab-todos-clientes" class="atab">🏢 Todos los Clientes</button>
         <button onclick="switchAdminTab('automatizaciones')" id="atab-automatizaciones" class="atab">🤖 Automatizaciones <span id="atab-automatizaciones-badge" style="display:none;background:#A32D2D;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px">0</span></button>
+        <button onclick="switchAdminTab('workflow')" id="atab-workflow" class="atab">⚙️ Workflow</button>
         <button onclick="switchAdminTab('actividad')" id="atab-actividad" class="atab">🕓 Actividad</button>
         <button onclick="switchAdminTab('importar')" id="atab-importar" class="atab">⬇️ Importar</button>
         <button onclick="switchAdminTab('migrar')" id="atab-migrar" class="atab">🔄 Migrar</button>
@@ -630,6 +631,40 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           Reglas <b>trigger → condición → acción</b> que se evalúan en tiempo real contra tus leads y clientes. Actívalas o desactívalas, y ejecuta la acción con un clic — sin pasos manuales.
         </div>
         <div id="automatizaciones-list"></div>
+      </div>
+
+      <!-- TAB: WORKFLOW (reglas configurables por el usuario, sin código) -->
+      <div id="apanel-workflow" style="display:none">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Además de las 3 reglas fijas de Automatizaciones, aquí puedes crear tus propias reglas <b>trigger → condición → acción</b>: eliges el módulo, el campo, la condición y el mensaje — sin tocar código. Cada regla activa genera una notificación real al responsable cuando se cumple.
+        </div>
+        <div class="card mb16" style="padding:16px">
+          <div class="section-title" style="margin-bottom:10px">➕ Nueva regla</div>
+          <div class="g3 mb12">
+            <div><label>Nombre de la regla</label><input id="wf-nombre" placeholder="Ej. Cliente Platino sin contacto"></div>
+            <div><label>Módulo</label>
+              <select id="wf-tabla" onchange="wfUpdateCampos()">
+                <option value="leads">Leads</option>
+                <option value="clientes">Clientes</option>
+              </select>
+            </div>
+            <div><label>Campo</label><select id="wf-campo"></select></div>
+          </div>
+          <div class="g3 mb12">
+            <div><label>Condición</label>
+              <select id="wf-operador">
+                <option value=">=">≥ (mayor o igual)</option>
+                <option value="<=">≤ (menor o igual)</option>
+                <option value="=">= (igual a)</option>
+                <option value="!=">≠ (distinto de)</option>
+              </select>
+            </div>
+            <div><label>Valor</label><input id="wf-valor" placeholder="Ej. 5, Propuesta, true"></div>
+            <div><label>Mensaje de la notificación</label><input id="wf-mensaje" placeholder="Ej. {empresa} necesita seguimiento"></div>
+          </div>
+          <button class="btn btn-sm" onclick="wfCrearRegla()">➕ Crear regla</button>
+        </div>
+        <div id="workflow-list"></div>
       </div>
 
       <!-- TAB: ACTIVIDAD (historial de cambios) -->
@@ -3155,7 +3190,7 @@ function renderEntrantesCount(){
 }
 
 function switchAdminTab(tab){
-  const tabs = ['overview','kanban','entrantes','todos-leads','todos-clientes','automatizaciones','actividad','importar','migrar','usuarios','claves'];
+  const tabs = ['overview','kanban','entrantes','todos-leads','todos-clientes','automatizaciones','workflow','actividad','importar','migrar','usuarios','claves'];
   tabs.forEach(t=>{
     const panel = document.getElementById('apanel-'+t);
     const btn = document.getElementById('atab-'+t);
@@ -3172,7 +3207,140 @@ function switchAdminTab(tab){
   }
   if(tab==='todos-clientes') renderAdminClientes();
   if(tab==='automatizaciones') renderAutomatizaciones();
+  if(tab==='workflow'){ wfUpdateCampos(); renderWorkflow(); }
   if(tab==='actividad') renderActividad();
+}
+
+// ── WORKFLOW VISUAL CONFIGURABLE (automatizaciones avanzadas, sin código) ──
+const WF_CAMPOS = {
+  leads: [
+    {v:'dias_sin_contacto', l:'Días sin contacto'},
+    {v:'etapa', l:'Etapa'},
+    {v:'temperatura', l:'Temperatura'},
+  ],
+  clientes: [
+    {v:'dias_para_vencer_pago', l:'Días para que venza el pago (negativo = ya vencido)'},
+    {v:'cxc_pendiente', l:'Cuenta por cobrar pendiente (true/false)'},
+  ]
+};
+function wfUpdateCampos(){
+  const tabla = document.getElementById('wf-tabla')?.value || 'leads';
+  const sel = document.getElementById('wf-campo');
+  if(!sel) return;
+  sel.innerHTML = WF_CAMPOS[tabla].map(c=>`<option value="${c.v}">${c.l}</option>`).join('');
+}
+async function wfCrearRegla(){
+  const nombre = document.getElementById('wf-nombre').value.trim();
+  const tabla = document.getElementById('wf-tabla').value;
+  const campo = document.getElementById('wf-campo').value;
+  const operador = document.getElementById('wf-operador').value;
+  const valor = document.getElementById('wf-valor').value.trim();
+  const accion_mensaje = document.getElementById('wf-mensaje').value.trim();
+  if(!nombre || !valor || !accion_mensaje){ showToast('Completa nombre, valor y mensaje','⚠️'); return; }
+  try{
+    await sbPost('workflow_reglas', {nombre, tabla, campo, operador, valor, accion_mensaje, activa:true, creado_por: currentUser.nombre});
+    ['wf-nombre','wf-valor','wf-mensaje'].forEach(id=>document.getElementById(id).value='');
+    showToast('Regla creada ✓');
+    renderWorkflow();
+  }catch(e){ showToast('Error al crear regla: '+e.message,'⚠️'); }
+}
+async function wfToggleRegla(id, activa){
+  try{ await sbPatch('workflow_reglas', id, {activa: !activa}); renderWorkflow(); }
+  catch(e){ showToast('Error al actualizar: '+e.message,'⚠️'); }
+}
+async function wfEliminarRegla(id){
+  if(!confirm('¿Eliminar esta regla?')) return;
+  try{
+    await sbSecureWrite('delete','workflow_reglas',{id},{});
+    showToast('Regla eliminada');
+    renderWorkflow();
+  }catch(e){ showToast('Error al eliminar: '+e.message,'⚠️'); }
+}
+function wfCampoLabel(tabla, campo){
+  return (WF_CAMPOS[tabla]||[]).find(c=>c.v===campo)?.l || campo;
+}
+function wfCampoValor(regla, item){
+  if(regla.tabla==='leads'){
+    if(regla.campo==='dias_sin_contacto') return diasDesde(item.ultimo_movimiento);
+    if(regla.campo==='etapa') return item.etapa;
+    if(regla.campo==='temperatura') return item.temperatura;
+  } else {
+    const ci = item.ciclo||{};
+    if(regla.campo==='dias_para_vencer_pago') return diasDesde(ci.pago_fecha_val);
+    if(regla.campo==='cxc_pendiente') return (ci.cxc && !ci.pago) ? 'true' : 'false';
+  }
+  return undefined;
+}
+function wfCumple(regla, item){
+  const v = wfCampoValor(regla, item);
+  if(v===undefined || v===null || v==='') return false;
+  const val = regla.valor;
+  const numV = Number(v), numVal = Number(val);
+  const esNumerico = !isNaN(numV) && !isNaN(numVal) && val!=='';
+  switch(regla.operador){
+    case '>=': return esNumerico ? numV >= numVal : String(v) >= String(val);
+    case '<=': return esNumerico ? numV <= numVal : String(v) <= String(val);
+    case '=':  return esNumerico ? numV === numVal : String(v).toLowerCase() === String(val).toLowerCase();
+    case '!=': return esNumerico ? numV !== numVal : String(v).toLowerCase() !== String(val).toLowerCase();
+    default: return false;
+  }
+}
+let workflowReglas = [];
+async function renderWorkflow(){
+  const wrap = document.getElementById('workflow-list');
+  if(!wrap) return;
+  wrap.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0">Cargando reglas...</div>';
+  try{ workflowReglas = await sbGet('workflow_reglas','*','&order=creado_en.desc'); }catch(e){ workflowReglas = []; }
+  if(!workflowReglas.length){
+    wrap.innerHTML = '<div class="empty-state">Aún no has creado reglas personalizadas. Usa el formulario de arriba.</div>';
+    return;
+  }
+  wrap.innerHTML = workflowReglas.map(r=>{
+    const arr = r.tabla==='leads' ? leads : clientes;
+    const matches = (arr||[]).filter(item=>wfCumple(r,item));
+    return `<div class="card mb16" style="padding:16px;${r.activa?'':'opacity:.55'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">⚙️ ${esc(r.nombre)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:2px"><b>Condición:</b> ${r.tabla==='leads'?'Leads':'Clientes'} · ${wfCampoLabel(r.tabla,r.campo)} ${esc(r.operador)} ${esc(r.valor)}</div>
+          <div style="font-size:12px;color:var(--muted)"><b>Mensaje:</b> ${esc(r.accion_mensaje)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px;font-weight:800;color:${matches.length>0?'var(--red)':'var(--muted)'}">${r.activa?matches.length:0}</span>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
+            <input type="checkbox" ${r.activa?'checked':''} onchange="wfToggleRegla('${r.id}', ${r.activa})"> Activa
+          </label>
+          <button onclick="wfEliminarRegla('${r.id}')" title="Eliminar" style="background:none;border:none;cursor:pointer;font-size:14px">🗑</button>
+        </div>
+      </div>
+      ${r.activa && matches.length ? `
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;max-height:160px;overflow-y:auto">
+          ${matches.slice(0,20).map(m=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px dashed var(--border)">${esc(m.empresa)} — ${esc(m.responsable||'')}</div>`).join('')}
+          ${matches.length>20?`<div style="font-size:11px;color:var(--muted);padding-top:4px">+ ${matches.length-20} más</div>`:''}
+        </div>` : (r.activa ? `<div style="margin-top:10px;font-size:12px;color:var(--muted)">✓ Sin coincidencias — todo al día</div>` : '')}
+    </div>`;
+  }).join('');
+  syncWorkflowNotificaciones();
+}
+async function syncWorkflowNotificaciones(){
+  try{
+    const jobs = [];
+    for(const r of workflowReglas){
+      if(!r.activa) continue;
+      const arr = r.tabla==='leads' ? leads : clientes;
+      const matches = (arr||[]).filter(item=>wfCumple(r,item));
+      matches.forEach(m=>{
+        const dest = m.responsable || 'Administrador';
+        const msg = r.accion_mensaje.replace(/\{empresa\}/g, m.empresa||'');
+        jobs.push(sbRpc('crear_notificacion', {
+          p_usuario: dest, p_tipo: `workflow_${r.id}`, p_titulo: r.nombre,
+          p_mensaje: msg, p_origen_tabla: r.tabla, p_origen_id: String(m.id||m.empresa)
+        }));
+      });
+    }
+    await Promise.allSettled(jobs);
+    renderNotifCampana();
+  }catch(e){ /* silencioso */ }
 }
 
 // ── ACTIVIDAD (historial de cambios / auditoría) ──
