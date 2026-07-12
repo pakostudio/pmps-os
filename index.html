@@ -1515,7 +1515,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <div style="padding:16px 20px">
         <div style="font-size:15px;font-weight:600;margin-bottom:4px" id="dir-modal-empresa">—</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="dir-modal-sub">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="dir-modal-sub">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="dir-modal-tel">—</div>
         <div style="margin-bottom:12px">
           <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Estatus</label>
           <select id="dir-modal-estatus" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff;margin-top:4px">
@@ -1687,6 +1688,50 @@ function diasDesde(f){ if(!f)return 999; const d=parseFecha(f); if(!d||isNaN(d))
 function fmtFecha(f){ if(!f)return '—'; const d=parseFecha(f); if(!d||isNaN(d))return '—'; return d.toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'}); }
 function fmtValor(v){ if(!v||isNaN(v))return '$0'; const n=parseFloat(v); if(n>=1000000)return '$'+(n/1000000).toFixed(1)+'M'; if(n>=1000)return '$'+Math.round(n/1000)+'k'; return '$'+n; }
 function canalIcon(c){ return {'Llamada':'📞','WhatsApp':'💬','Email':'✉️','Visita':'🤝','Video':'📹'}[c]||'📌'; }
+// Integración WhatsApp (fase 1, sin costo ni API): abre un chat directo con el número,
+// normalizando a formato internacional (asume México +52 si no trae lada).
+function waLink(tel, texto){
+  if(!tel) return '';
+  let d = String(tel).replace(/[^0-9]/g,'');
+  if(d.length===10) d = '52'+d;
+  const msg = texto ? `?text=${encodeURIComponent(texto)}` : '';
+  return `https://wa.me/${d}${msg}`;
+}
+function waBtn(tel, texto){
+  if(!tel) return '';
+  return `<a href="${waLink(tel,texto)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Abrir WhatsApp" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;background:#25D36622;color:#25D366;font-size:12px;text-decoration:none;margin-left:4px">💬</a>`;
+}
+
+// Integración de Calendario (fase 1, sin costo ni OAuth): genera un archivo .ics
+// descargable que se importa en Google Calendar, Outlook, Apple Calendar, etc.
+function icsDownload(titulo, descripcion, fechaStr){
+  if(!fechaStr) return;
+  const d = new Date(fechaStr+'T09:00:00');
+  if(isNaN(d.getTime())) return;
+  const pad = n => String(n).padStart(2,'0');
+  const dt = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  const ics = [
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PMPS CRM//ES',
+    'BEGIN:VEVENT',
+    `UID:${Date.now()}@pmps-os`,
+    `DTSTAMP:${dt}`,
+    `DTSTART:${dt}`,
+    `SUMMARY:${titulo.replace(/\n/g,' ')}`,
+    `DESCRIPTION:${(descripcion||'').replace(/\n/g,' ')}`,
+    'END:VEVENT','END:VCALENDAR'
+  ].join('\r\n');
+  const blob = new Blob([ics], {type:'text/calendar'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'recordatorio.ics';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function icsBtn(titulo, descripcion, fechaStr){
+  if(!fechaStr) return '';
+  const esc2 = s => String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  return `<button onclick="event.stopPropagation();icsDownload('${esc2(titulo)}','${esc2(descripcion)}','${fechaStr}')" title="Agregar recordatorio al calendario" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;background:#29ABE222;color:#123A63;font-size:11px;border:none;cursor:pointer;margin-left:4px">📅</button>`;
+}
 // Temperatura derivada — sin mutar el objeto original
 function tempEfectiva(l){ return diasDesde(l.ultimo_movimiento)>=7 ? '❄️ Frío' : (l.temperatura||'~ Tibio'); }
 
@@ -2060,7 +2105,7 @@ function renderLeads(filtro=''){
     return `<div class="card" ${frio?'style="border-color:#F09595"':''}>
       <div class="card-head" onclick="toggleCard('lead-${l.id}')">
         <div><div class="fw500">${l.empresa}</div>
-        <div class="muted">${l.contacto||''}${l.telefono?' · '+l.telefono:''}${frio?' <span style="color:var(--red)">· Sin contacto '+dias+' días ⚠️</span>':''}</div></div>
+        <div class="muted">${l.contacto||''}${l.telefono?' · '+l.telefono+waBtn(l.telefono, `Hola ${l.contacto||''}, te contacto de PMPS Menlun respecto a ${l.empresa}.`):''}${frio?' <span style="color:var(--red)">· Sin contacto '+dias+' días ⚠️</span>':''}</div></div>
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:12px">${temp}</span>
           <span class="badge ${etapaCls[l.etapa]||'badge-gray'}">${l.etapa}</span>
@@ -2364,8 +2409,8 @@ function renderClientes(filtro=''){
           <div><div class="muted">Sitio web</div><div>${c.web||'—'}</div></div>
         </div>
         <div class="g3 mb12">
-          <div><div class="muted">Teléfono</div><div>${c.telefono||'—'}</div></div>
-          <div><div class="muted">WhatsApp</div><div>${c.whatsapp||'—'}</div></div>
+          <div><div class="muted">Teléfono</div><div>${c.telefono||'—'}${waBtn(c.telefono, `Hola, te contacto de PMPS Menlun respecto a ${c.empresa||''}.`)}</div></div>
+          <div><div class="muted">WhatsApp</div><div>${c.whatsapp||'—'}${waBtn(c.whatsapp, `Hola, te contacto de PMPS Menlun respecto a ${c.empresa||''}.`)}</div></div>
           <div><div class="muted">Email</div><div>${c.email||'—'}</div></div>
         </div>
         ${c.conmutador?`<div class="mb12"><div class="muted">Conmutador</div><div>${c.conmutador}${c.ext?' ext. '+c.ext:''}</div></div>`:''}
@@ -3215,7 +3260,7 @@ function renderAutomatizaciones(){
       trigger:'Fecha de pago comprometida', condition:'Vence en los próximos 3 días y sigue sin pago',
       action:'Copiar recordatorio urgente de vencimiento de pago',
       matches: clientesPagoVence,
-      renderItem: c => `${esc(c.empresa)} — vence ${fmtFecha(c.ciclo.pago_fecha_val)}`,
+      renderItem: c => `${esc(c.empresa)} — vence ${fmtFecha(c.ciclo.pago_fecha_val)} ${icsBtn(`Pago pendiente — ${c.empresa}`, `Recordatorio de pago por cobrar de ${c.empresa}.`, c.ciclo.pago_fecha_val)}`,
       exec: 'autoExecPagoVence' },
   ]
 
@@ -5546,6 +5591,7 @@ function dirOpenModal(id){
   dirEditingId = id
   document.getElementById('dir-modal-empresa').textContent = r.nombre_establecimiento||r.razon_social||'—'
   document.getElementById('dir-modal-sub').textContent = `${r.municipio||'—'}, ${r.estado||''} · ${r.sector||'—'}`
+  document.getElementById('dir-modal-tel').innerHTML = r.telefono ? `📞 ${esc(r.telefono)}${waBtn(r.telefono, `Hola, te contacto de PMPS Menlun respecto a ${r.nombre_establecimiento||r.razon_social||''}.`)}` : ''
   document.getElementById('dir-modal-estatus').value = r.estatus||'Nuevo'
   document.getElementById('dir-modal-vendedor').value = r.vendedor_asignado || (currentUser.rol!=='admin' ? currentUser.nombre : '')
   document.getElementById('dir-modal-notas').value = r.notas||''
