@@ -3335,7 +3335,7 @@ async function syncWorkflowNotificaciones(){
         jobs.push(sbRpc('crear_notificacion', {
           p_usuario: dest, p_tipo: `workflow_${r.id}`, p_titulo: r.nombre,
           p_mensaje: msg, p_origen_tabla: r.tabla, p_origen_id: String(m.id||m.empresa)
-        }));
+        }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, r.nombre, msg) }));
       });
     }
     await Promise.allSettled(jobs);
@@ -3472,32 +3472,69 @@ async function sbRpc(fn, args){
   if(!res.ok) throw new Error(await res.text())
   return res.status===204 ? null : res.json()
 }
+
+// ── Envío real de correo (Resend, vía Edge Function) ──────────────────────
+// Solo funciona para usuarios con cuenta real de Supabase Auth (requiere JWT válido);
+// los usuarios sin correo (Daniel, Invitado) siguen recibiendo el aviso solo dentro de la app.
+let USUARIOS_EMAIL_MAP = null;
+async function getUsuariosEmailMap(){
+  if(USUARIOS_EMAIL_MAP) return USUARIOS_EMAIL_MAP;
+  try{
+    const rows = await sbGet('usuarios','nombre,email','');
+    USUARIOS_EMAIL_MAP = {};
+    rows.forEach(r=>{ if(r.email) USUARIOS_EMAIL_MAP[r.nombre] = r.email; });
+  }catch(e){ USUARIOS_EMAIL_MAP = {}; }
+  return USUARIOS_EMAIL_MAP;
+}
+async function enviarCorreoNotificacion(destinatarioNombre, titulo, mensaje){
+  if(!authAccessToken) return; // sin sesión real de Auth, no se puede enviar (por diseño)
+  const emails = await getUsuariosEmailMap();
+  const to = emails[destinatarioNombre];
+  if(!to) return;
+  try{
+    await fetch(`${SB_URL}/functions/v1/send-email`, {
+      method:'POST',
+      headers:{ 'Authorization':`Bearer ${authAccessToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        to, subject: `PMPS CRM — ${titulo}`,
+        html: `<div style="font-family:sans-serif;font-size:14px;color:#132338">
+          <p style="font-size:16px;font-weight:700;margin-bottom:6px">${esc(titulo)}</p>
+          <p style="color:#5a6b7d">${esc(mensaje)}</p>
+          <p style="margin-top:20px;font-size:12px;color:#9aa8b5">PMPS CRM · Operadora Química Menlun</p>
+        </div>`
+      })
+    });
+  }catch(e){ /* silencioso: el correo es un extra, no debe romper la app */ }
+}
 async function syncNotificaciones(leadsSinContacto, clientesCxc, clientesPagoVence){
   try{
     const jobs = []
     leadsSinContacto.forEach(l=>{
       const dest = l.responsable || 'Administrador'
+      const titulo = 'Lead sin contacto'
+      const msg = `"${l.empresa}" lleva ${diasDesde(l.ultimo_movimiento)} días sin movimiento.`
       jobs.push(sbRpc('crear_notificacion', {
-        p_usuario: dest, p_tipo:'lead_frio', p_titulo:'Lead sin contacto',
-        p_mensaje: `"${l.empresa}" lleva ${diasDesde(l.ultimo_movimiento)} días sin movimiento.`,
-        p_origen_tabla:'leads', p_origen_id: String(l.id||l.empresa)
-      }))
+        p_usuario: dest, p_tipo:'lead_frio', p_titulo:titulo,
+        p_mensaje: msg, p_origen_tabla:'leads', p_origen_id: String(l.id||l.empresa)
+      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, titulo, msg) }))
     })
     clientesCxc.forEach(c=>{
       const dest = c.responsable || 'Administrador'
+      const titulo = 'Cuenta por cobrar pendiente'
+      const msg = `"${c.empresa}" tiene una cuenta por cobrar sin pago registrado.`
       jobs.push(sbRpc('crear_notificacion', {
-        p_usuario: dest, p_tipo:'cuenta_por_cobrar', p_titulo:'Cuenta por cobrar pendiente',
-        p_mensaje: `"${c.empresa}" tiene una cuenta por cobrar sin pago registrado.`,
-        p_origen_tabla:'clientes', p_origen_id: String(c.id||c.empresa)
-      }))
+        p_usuario: dest, p_tipo:'cuenta_por_cobrar', p_titulo:titulo,
+        p_mensaje: msg, p_origen_tabla:'clientes', p_origen_id: String(c.id||c.empresa)
+      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, titulo, msg) }))
     })
     clientesPagoVence.forEach(c=>{
       const dest = c.responsable || 'Administrador'
+      const titulo = 'Pago por vencer'
+      const msg = `"${c.empresa}" tiene un pago que vence ${fmtFecha(c.ciclo?.pago_fecha_val)}.`
       jobs.push(sbRpc('crear_notificacion', {
-        p_usuario: dest, p_tipo:'pago_vence', p_titulo:'Pago por vencer',
-        p_mensaje: `"${c.empresa}" tiene un pago que vence ${fmtFecha(c.ciclo?.pago_fecha_val)}.`,
-        p_origen_tabla:'clientes', p_origen_id: String(c.id||c.empresa)
-      }))
+        p_usuario: dest, p_tipo:'pago_vence', p_titulo:titulo,
+        p_mensaje: msg, p_origen_tabla:'clientes', p_origen_id: String(c.id||c.empresa)
+      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, titulo, msg) }))
     })
     await Promise.allSettled(jobs)
     renderNotifCampana()
