@@ -429,6 +429,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button onclick="switchRepTab('kanban')" id="rtab-kanban" class="atab">🗂 Kanban</button>
         <button onclick="switchRepTab('gantt')" id="rtab-gantt" class="atab">📋 Gantt</button>
         <button onclick="switchRepTab('calendario')" id="rtab-calendario" class="atab">📅 Calendario</button>
+        <button onclick="switchRepTab('velocidad')" id="rtab-velocidad" class="atab">📈 Velocidad</button>
       </div>
       <!-- TAB: RESUMEN -->
       <div id="rpanel-resumen">
@@ -487,6 +488,24 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);margin-right:4px"></span>Pago vencido</span>
         </div>
       </div>
+      <!-- TAB: VELOCIDAD -->
+      <div id="rpanel-velocidad" style="display:none">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Velocidad de pipeline (días promedio desde el último movimiento en leads activos) y tasa de conversión (cerrados ganados vs. total de cerrados) por vendedor.</div>
+        <div id="rep-velocidad-yo"></div>
+        <div class="card" style="padding:0;overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="background:#1a3a6b;color:#fff">
+              <th style="padding:8px 12px;text-align:left">Vendedor</th>
+              <th style="padding:8px 10px;text-align:center">Leads activos</th>
+              <th style="padding:8px 10px;text-align:center">Velocidad prom.</th>
+              <th style="padding:8px 10px;text-align:center">Ganados</th>
+              <th style="padding:8px 10px;text-align:center">Perdidos</th>
+              <th style="padding:8px 10px;text-align:center">Conversión</th>
+            </tr></thead>
+            <tbody id="rep-velocidad-tabla"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- ══ ADMIN ══ -->
@@ -527,6 +546,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button onclick="switchAdminTab('entrantes')" id="atab-entrantes" class="atab">📥 Entrantes <span id="atab-entrantes-badge" style="display:none;background:#185FA5;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px">0</span></button>
         <button onclick="switchAdminTab('todos-leads')" id="atab-todos-leads" class="atab">🎯 Todos los Leads</button>
         <button onclick="switchAdminTab('todos-clientes')" id="atab-todos-clientes" class="atab">🏢 Todos los Clientes</button>
+        <button onclick="switchAdminTab('automatizaciones')" id="atab-automatizaciones" class="atab">🤖 Automatizaciones <span id="atab-automatizaciones-badge" style="display:none;background:#A32D2D;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px">0</span></button>
         <button onclick="switchAdminTab('importar')" id="atab-importar" class="atab">⬇️ Importar</button>
         <button onclick="switchAdminTab('migrar')" id="atab-migrar" class="atab">🔄 Migrar</button>
         <button onclick="switchAdminTab('usuarios')" id="atab-usuarios" class="atab">👥 Usuarios</button>
@@ -566,6 +586,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="apanel-kanban" style="display:none">
         <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Pipeline visual de todos los leads del equipo</div>
         <div id="admin-kanban" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;overflow-x:auto;min-width:0"></div>
+      </div>
+
+      <!-- TAB: AUTOMATIZACIONES -->
+      <div id="apanel-automatizaciones" style="display:none">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Reglas <b>trigger → condición → acción</b> que se evalúan en tiempo real contra tus leads y clientes. Actívalas o desactívalas, y ejecuta la acción con un clic — sin pasos manuales.
+        </div>
+        <div id="automatizaciones-list"></div>
       </div>
 
       <!-- TAB: ENTRANTES DEL DIRECTORIO -->
@@ -986,10 +1014,26 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </select>
       <button onclick="catExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
       <button onclick="catExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
+      <div style="display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden">
+        <button id="cat-view-tarjetas" onclick="catSetView('tarjetas')" style="padding:6px 10px;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">▦ Tarjetas</button>
+        <button id="cat-view-tabla" onclick="catSetView('tabla')" style="padding:6px 10px;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);border-left:1px solid var(--border)">☰ Tabla</button>
+      </div>
       <span class="results-label" id="cat-count">— productos</span>
     </div>
     <div id="cat-pills-row" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px"></div>
     <div id="cat-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px"></div>
+    <div id="cat-table-wrap" style="display:none;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">CLAVE</th>
+          <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">NOMBRE</th>
+          <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">FAMILIA</th>
+          <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">USO/DOSIFICACIÓN</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="cat-tbody"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Modal editar producto (admin) -->
@@ -1351,9 +1395,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         </label>
         <button onclick="dirClearFilters()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">Limpiar</button>
         <button onclick="dirExportCSV()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Exportar CSV</button>
+        <div style="display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden">
+          <button id="dir-view-tabla" onclick="dirSetView('tabla')" style="padding:6px 10px;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">☰ Tabla</button>
+          <button id="dir-view-tarjetas" onclick="dirSetView('tarjetas')" style="padding:6px 10px;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);border-left:1px solid var(--border)">▦ Tarjetas</button>
+        </div>
         <span class="results-label" id="dir-count">Cargando…</span>
       </div>
-      <div style="overflow-x:auto">
+      <div id="dir-view-table-wrap" style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="border-bottom:1px solid var(--border)">
             <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('nombre_establecimiento')">EMPRESA</th>
@@ -1370,6 +1418,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <tbody id="dir-tbody"><tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Cargando directorio NEXUS…</td></tr></tbody>
         </table>
       </div>
+      <div id="dir-view-cards-wrap" style="display:none;padding:12px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border)">
         <span style="font-size:11px;color:var(--muted)" id="dir-page-info">—</span>
         <div id="dir-page-btns" style="display:flex;gap:4px"></div>
@@ -2248,7 +2297,7 @@ function poblarSelectMes(){
 // ══════════════════════════════════════════
 // REPORTES — TAB SWITCHER
 // ══════════════════════════════════════════
-const REP_TABS = ['resumen','kanban','gantt','calendario'];
+const REP_TABS = ['resumen','kanban','gantt','calendario','velocidad'];
 let _repTabActivo = 'resumen';
 let _calMesOffset = 0; // offset en meses desde hoy para el calendario
 
@@ -2263,6 +2312,69 @@ function switchRepTab(tab){
   if(tab==='kanban')    renderRepKanban();
   if(tab==='gantt')     renderRepGantt();
   if(tab==='calendario') renderRepCalendario();
+  if(tab==='velocidad') renderRepVelocidad();
+}
+
+// ══════════════════════════════════════════
+// VELOCIDAD Y CONVERSIÓN POR VENDEDOR (rol-aware)
+// ══════════════════════════════════════════
+function calcVelocidadPorVendedor(){
+  const porVendedor = {};
+  leads.forEach(l=>{
+    const v = l.responsable || 'Sin asignar';
+    if(!porVendedor[v]) porVendedor[v] = { activos:[], ganados:0, perdidos:0 };
+    if(l.etapa==='Cerrado ganado') porVendedor[v].ganados++;
+    else if(l.etapa==='Cerrado perdido') porVendedor[v].perdidos++;
+    else porVendedor[v].activos.push(l);
+  });
+  return Object.entries(porVendedor).map(([nombre, d])=>{
+    const diasProm = d.activos.length ? Math.round(d.activos.reduce((s,l)=>s+diasDesde(l.ultimo_movimiento),0)/d.activos.length) : 0;
+    const totalCerrados = d.ganados + d.perdidos;
+    const conversion = totalCerrados ? Math.round(d.ganados/totalCerrados*100) : null;
+    return { nombre, activos:d.activos.length, diasProm, ganados:d.ganados, perdidos:d.perdidos, conversion };
+  }).sort((a,b)=>b.activos-a.activos);
+}
+
+function renderRepVelocidad(){
+  const tabla = document.getElementById('rep-velocidad-tabla');
+  const yoWrap = document.getElementById('rep-velocidad-yo');
+  if(!tabla) return;
+  const datos = calcVelocidadPorVendedor();
+
+  const fila = d => {
+    const col = d.diasProm>=10?'#A32D2D':d.diasProm>=5?'#854F0B':'#1D9E75';
+    const colConv = d.conversion===null?'#999':d.conversion>=50?'#1D9E75':d.conversion>=25?'#854F0B':'#A32D2D';
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px 12px;font-weight:600">${esc(d.nombre)}</td>
+      <td style="padding:8px 10px;text-align:center">${d.activos}</td>
+      <td style="padding:8px 10px;text-align:center;color:${col};font-weight:700">${d.diasProm}d</td>
+      <td style="padding:8px 10px;text-align:center;color:#1D9E75">${d.ganados}</td>
+      <td style="padding:8px 10px;text-align:center;color:#A32D2D">${d.perdidos}</td>
+      <td style="padding:8px 10px;text-align:center;color:${colConv};font-weight:700">${d.conversion===null?'—':d.conversion+'%'}</td>
+    </tr>`
+  }
+
+  // Vista admin: tabla completa de todo el equipo
+  if(currentUser && currentUser.rol==='admin'){
+    yoWrap.innerHTML = '';
+    tabla.innerHTML = datos.map(fila).join('') || `<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--muted)">Sin datos</td></tr>`;
+    return;
+  }
+
+  // Vista vendedor: destaca su propio desempeño arriba, comparado contra el promedio del equipo
+  const mio = datos.find(d=>d.nombre===(currentUser?.nombre||currentUser?.name)) || { nombre:(currentUser?.nombre||currentUser?.name), activos:0, diasProm:0, ganados:0, perdidos:0, conversion:null };
+  const activosProm = datos.length ? Math.round(datos.reduce((s,d)=>s+d.diasProm,0)/datos.length) : 0;
+  const convProm = (() => {
+    const conConv = datos.filter(d=>d.conversion!==null);
+    return conConv.length ? Math.round(conConv.reduce((s,d)=>s+d.conversion,0)/conConv.length) : null;
+  })();
+  yoWrap.innerHTML = `<div class="g4 mb16">
+    <div class="kpi"><div class="kpi-n">${mio.activos}</div><div class="kpi-l">Tus leads activos</div></div>
+    <div class="kpi"><div class="kpi-n ${mio.diasProm<=activosProm?'text-green':'text-amber'}">${mio.diasProm}d</div><div class="kpi-l">Tu velocidad (equipo: ${activosProm}d)</div></div>
+    <div class="kpi"><div class="kpi-n text-green">${mio.ganados}</div><div class="kpi-l">Ganados</div></div>
+    <div class="kpi"><div class="kpi-n ${mio.conversion===null?'':(mio.conversion>=(convProm||0)?'text-green':'text-amber')}">${mio.conversion===null?'—':mio.conversion+'%'}</div><div class="kpi-l">Tu conversión (equipo: ${convProm===null?'—':convProm+'%'})</div></div>
+  </div>`;
+  tabla.innerHTML = datos.map(fila).join('') || `<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--muted)">Sin datos</td></tr>`;
 }
 
 // ══════════════════════════════════════════
@@ -2754,6 +2866,7 @@ function renderAdminPanel(){
   renderMigrarSelects();
   renderImportarVendedores();
   renderEntrantesCount();
+  autoUpdateBadge();
 }
 
 function renderAdminKPIs(){
@@ -2781,7 +2894,7 @@ function renderEntrantesCount(){
 }
 
 function switchAdminTab(tab){
-  const tabs = ['overview','kanban','entrantes','todos-leads','todos-clientes','importar','migrar','usuarios','claves'];
+  const tabs = ['overview','kanban','entrantes','todos-leads','todos-clientes','automatizaciones','importar','migrar','usuarios','claves'];
   tabs.forEach(t=>{
     const panel = document.getElementById('apanel-'+t);
     const btn = document.getElementById('atab-'+t);
@@ -2791,12 +2904,123 @@ function switchAdminTab(tab){
   if(tab==='overview') renderAdminOverview();
   if(tab==='kanban') renderAdminKanban();
   if(tab==='entrantes') renderEntrantes();
-  if(tab==='todos-leads'){ 
-    const fv=document.getElementById('admin-filter-vendedor'); 
-    if(fv) fv.value=''; 
-    renderAdminLeads(); 
+  if(tab==='todos-leads'){
+    const fv=document.getElementById('admin-filter-vendedor');
+    if(fv) fv.value='';
+    renderAdminLeads();
   }
   if(tab==='todos-clientes') renderAdminClientes();
+  if(tab==='automatizaciones') renderAutomatizaciones();
+}
+
+// ── AUTOMATIZACIONES (trigger → condición → acción) ──
+function autoRuleEnabled(id){
+  const v = localStorage.getItem('auto_rule_'+id);
+  return v===null ? true : v==='1';
+}
+function autoToggleRule(id){
+  const cur = autoRuleEnabled(id);
+  localStorage.setItem('auto_rule_'+id, cur?'0':'1');
+  renderAutomatizaciones();
+}
+function autoUpdateBadge(){
+  let n=0;
+  if(autoRuleEnabled('leads-frios')) n += leads.filter(l=>l.etapa!=='Cerrado ganado'&&l.etapa!=='Cerrado perdido'&&diasDesde(l.ultimo_movimiento)>=7&&l.temperatura!=='❄️ Frío').length;
+  if(autoRuleEnabled('cxc-pendiente')) n += clientes.filter(c=>{const ci=c.ciclo||{};return ci.cxc&&!ci.pago;}).length;
+  if(autoRuleEnabled('pago-vence')) n += clientes.filter(c=>{const ci=c.ciclo||{};return ci.pago_fecha_val&&!ci.pago&&diasDesde(ci.pago_fecha_val)>=-3&&diasDesde(ci.pago_fecha_val)<=0;}).length;
+  const badge = document.getElementById('atab-automatizaciones-badge');
+  if(badge){ badge.style.display = n>0?'inline-block':'none'; badge.textContent = n; }
+}
+function renderAutomatizaciones(){
+  const wrap = document.getElementById('automatizaciones-list');
+  if(!wrap) return;
+
+  const leadsSinContacto = leads.filter(l=>l.etapa!=='Cerrado ganado'&&l.etapa!=='Cerrado perdido'&&diasDesde(l.ultimo_movimiento)>=7&&l.temperatura!=='❄️ Frío');
+  const clientesCxc = clientes.filter(c=>{const ci=c.ciclo||{};return ci.cxc&&!ci.pago;});
+  const clientesPagoVence = clientes.filter(c=>{const ci=c.ciclo||{};return ci.pago_fecha_val&&!ci.pago&&diasDesde(ci.pago_fecha_val)>=-3&&diasDesde(ci.pago_fecha_val)<=0;});
+
+  const rules = [
+    { id:'leads-frios', icon:'❄️',
+      trigger:'Lead sin movimiento', condition:'≥ 7 días sin contacto y no cerrado',
+      action:'Marcar temperatura como Frío en todos los coincidentes',
+      matches: leadsSinContacto,
+      renderItem: l => `${esc(l.empresa)} — ${esc(l.responsable||'')} · ${diasDesde(l.ultimo_movimiento)} días`,
+      exec: 'autoExecLeadsFrios' },
+    { id:'cxc-pendiente', icon:'⏳',
+      trigger:'Cliente con factura emitida', condition:'Cuenta por cobrar marcada y sin pago registrado',
+      action:'Copiar lista de cobro pendiente (para enviar por email/WhatsApp)',
+      matches: clientesCxc,
+      renderItem: c => `${esc(c.empresa)} — ${esc(c.responsable||'')}${c.ciclo?.factura_monto?' · $'+Number(c.ciclo.factura_monto).toLocaleString('es-MX'):''}`,
+      exec: 'autoExecCxcPendiente' },
+    { id:'pago-vence', icon:'⚠️',
+      trigger:'Fecha de pago comprometida', condition:'Vence en los próximos 3 días y sigue sin pago',
+      action:'Copiar recordatorio urgente de vencimiento de pago',
+      matches: clientesPagoVence,
+      renderItem: c => `${esc(c.empresa)} — vence ${fmtFecha(c.ciclo.pago_fecha_val)}`,
+      exec: 'autoExecPagoVence' },
+  ]
+
+  wrap.innerHTML = rules.map(r=>{
+    const on = autoRuleEnabled(r.id)
+    const n = on ? r.matches.length : 0
+    return `<div class="card mb16" style="padding:16px;${on?'':'opacity:.55'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">${r.icon} ${r.trigger}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:2px"><b>Condición:</b> ${r.condition}</div>
+          <div style="font-size:12px;color:var(--muted)"><b>Acción:</b> ${r.action}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px;font-weight:800;color:${n>0?'var(--red)':'var(--muted)'}">${n}</span>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
+            <input type="checkbox" ${on?'checked':''} onchange="autoToggleRule('${r.id}')"> Activa
+          </label>
+        </div>
+      </div>
+      ${on && r.matches.length ? `
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;max-height:160px;overflow-y:auto">
+          ${r.matches.slice(0,20).map(m=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px dashed var(--border)">${r.renderItem(m)}</div>`).join('')}
+          ${r.matches.length>20?`<div style="font-size:11px;color:var(--muted);padding-top:4px">+ ${r.matches.length-20} más</div>`:''}
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="${r.exec}()">▶ Ejecutar acción (${r.matches.length})</button>
+      ` : (on ? `<div style="margin-top:10px;font-size:12px;color:var(--muted)">✓ Sin coincidencias — todo al día</div>` : '')}
+    </div>`
+  }).join('')
+
+  autoUpdateBadge()
+}
+
+async function autoExecLeadsFrios(){
+  const matches = leads.filter(l=>l.etapa!=='Cerrado ganado'&&l.etapa!=='Cerrado perdido'&&diasDesde(l.ultimo_movimiento)>=7&&l.temperatura!=='❄️ Frío')
+  if(!matches.length) return
+  let ok=0, fail=0
+  for(const l of matches){
+    l.temperatura = '❄️ Frío'
+    try { await apiPost('upsert','prospectos', l); ok++ } catch(e){ fail++ }
+  }
+  showToast(`${ok} lead(s) marcados como Fríos${fail?` (${fail} con error)`:''}`, '❄️')
+  renderAutomatizaciones()
+}
+
+function autoExecCxcPendiente(){
+  const matches = clientes.filter(c=>{const ci=c.ciclo||{};return ci.cxc&&!ci.pago;})
+  if(!matches.length) return
+  const texto = matches.map(c=>{
+    const ci=c.ciclo||{}
+    return `- ${c.empresa} (${c.responsable||'sin asignar'})${ci.factura_monto?` — $${Number(ci.factura_monto).toLocaleString('es-MX')}`:''}${ci.factura_fecha?` — factura ${fmtFecha(ci.factura_fecha)}`:''}`
+  }).join('\n')
+  const bloque = `Cuentas por cobrar pendientes (${matches.length}):\n${texto}`
+  navigator.clipboard?.writeText(bloque).then(()=>showToast('Lista de cobro copiada al portapapeles','📋'))
+    .catch(()=>showToast('No se pudo copiar automáticamente','⚠️'))
+}
+
+function autoExecPagoVence(){
+  const matches = clientes.filter(c=>{const ci=c.ciclo||{};return ci.pago_fecha_val&&!ci.pago&&diasDesde(ci.pago_fecha_val)>=-3&&diasDesde(ci.pago_fecha_val)<=0;})
+  if(!matches.length) return
+  const texto = matches.map(c=>`- ${c.empresa} (${c.responsable||'sin asignar'}) — vence ${fmtFecha(c.ciclo.pago_fecha_val)}`).join('\n')
+  const bloque = `⚠️ Pagos por vencer en los próximos 3 días (${matches.length}):\n${texto}`
+  navigator.clipboard?.writeText(bloque).then(()=>showToast('Recordatorio copiado al portapapeles','📋'))
+    .catch(()=>showToast('No se pudo copiar automáticamente','⚠️'))
 }
 
 function renderAdminOverview(){
@@ -4327,6 +4551,22 @@ function catPillClick(btn, cat){
   catFilter()
 }
 
+function catSetView(mode){
+  localStorage.setItem('cat_view_mode', mode)
+  catFilter()
+}
+function catApplyViewStyles(){
+  const mode = localStorage.getItem('cat_view_mode') || 'tarjetas'
+  const btnT = document.getElementById('cat-view-tabla')
+  const btnC = document.getElementById('cat-view-tarjetas')
+  if(btnT){ btnT.style.background = mode==='tabla' ? '#1B3A6B' : '#fff'; btnT.style.color = mode==='tabla' ? '#fff' : 'var(--text)' }
+  if(btnC){ btnC.style.background = mode==='tarjetas' ? '#1B3A6B' : '#fff'; btnC.style.color = mode==='tarjetas' ? '#fff' : 'var(--text)' }
+  const grid = document.getElementById('cat-grid')
+  const tableWrap = document.getElementById('cat-table-wrap')
+  if(grid) grid.style.display = mode==='tarjetas' ? 'grid' : 'none'
+  if(tableWrap) tableWrap.style.display = mode==='tabla' ? 'block' : 'none'
+}
+
 function catFilter(){
   const q = (document.getElementById('cat-search')?.value||'').toLowerCase()
   const fam = document.getElementById('cat-familia')?.value||''
@@ -4336,6 +4576,25 @@ function catFilter(){
   )
   const countEl = document.getElementById('cat-count')
   if(countEl) countEl.textContent = data.length+' productos'
+  catApplyViewStyles()
+  const mode = localStorage.getItem('cat_view_mode') || 'tarjetas'
+
+  if(mode==='tabla'){
+    const tbody = document.getElementById('cat-tbody')
+    if(!tbody) return
+    tbody.innerHTML = data.map(p=>{
+      const color = CAT_COLORS[p.familia]||'#888'
+      return `<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="verProducto('${p.id}')">
+        <td style="padding:7px 10px;font-family:var(--mono);font-size:11px;color:var(--muted)">${p.clave||'—'}</td>
+        <td style="padding:7px 10px;font-weight:500">${p.nombre}</td>
+        <td style="padding:7px 10px"><span style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.03em">${p.familia||'—'}</span></td>
+        <td style="padding:7px 10px;color:var(--muted)">${p.uso_dosificacion||'—'}</td>
+        <td style="padding:7px 10px">${currentUser.rol==='admin'?`<button onclick="event.stopPropagation();catOpenEdit('${p.id}')" title="Editar" style="background:none;border:none;cursor:pointer;font-size:12px">✏️</button>`:''}</td>
+      </tr>`
+    }).join('') || `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados</td></tr>`
+    return
+  }
+
   const grid = document.getElementById('cat-grid')
   if(!grid) return
   grid.innerHTML = data.map(p=>{
@@ -4826,33 +5085,75 @@ function dirEstatusBadge(e){
   return `<span style="padding:2px 9px;border-radius:99px;font-size:11px;font-weight:500;background:${bg};color:${col}">${e||'Nuevo'}</span>`
 }
 
+function dirSetView(mode){
+  localStorage.setItem('dir_view_mode', mode)
+  dirApplyViewStyles()
+  dirRenderTable()
+}
+function dirApplyViewStyles(){
+  const mode = localStorage.getItem('dir_view_mode') || 'tabla'
+  const btnT = document.getElementById('dir-view-tabla')
+  const btnC = document.getElementById('dir-view-tarjetas')
+  if(btnT) { btnT.style.background = mode==='tabla' ? '#1B3A6B' : '#fff'; btnT.style.color = mode==='tabla' ? '#fff' : 'var(--text)' }
+  if(btnC) { btnC.style.background = mode==='tarjetas' ? '#1B3A6B' : '#fff'; btnC.style.color = mode==='tarjetas' ? '#fff' : 'var(--text)' }
+  const tableWrap = document.getElementById('dir-view-table-wrap')
+  const cardsWrap = document.getElementById('dir-view-cards-wrap')
+  if(tableWrap) tableWrap.style.display = mode==='tabla' ? 'block' : 'none'
+  if(cardsWrap) cardsWrap.style.display = mode==='tarjetas' ? 'grid' : 'none'
+}
+
 function dirRenderTable(){
   const countEl = document.getElementById('dir-count')
   if(countEl) countEl.textContent = dirFiltered.length.toLocaleString('es-MX')+' resultados'
-  const tbody = document.getElementById('dir-tbody')
-  if(!tbody) return
-  if(!dirFiltered.length){
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados con estos filtros</td></tr>`
-    dirRenderPagination(); return
-  }
+  dirApplyViewStyles()
+  const mode = localStorage.getItem('dir_view_mode') || 'tabla'
   const start = (dirPage-1)*DIR_PAGE_SIZE
   const page = dirFiltered.slice(start, start+DIR_PAGE_SIZE)
-  tbody.innerHTML = page.map(r=>`
-    <tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:7px 10px;font-weight:500;font-size:12px">${esc(r.nombre_establecimiento||r.razon_social||'—')}</td>
-      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.giro||'—')}</td>
-      <td style="padding:7px 10px;font-size:11px">${esc(r.sector||'—')}</td>
-      <td style="padding:7px 10px">${dirTierBadge(r.tier)}</td>
-      <td style="padding:7px 10px;font-size:12px">${esc(r.municipio||'—')}</td>
-      <td style="padding:7px 10px;font-size:12px">${esc(r.estado||'—')}</td>
-      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.zona_menlun||'—')}</td>
-      <td style="padding:7px 10px">${dirEstatusBadge(r.estatus)}</td>
-      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.vendedor_asignado||'—')}</td>
-      <td style="padding:7px 10px"><button onclick="dirOpenModal(${r.id})" style="background:none;border:none;cursor:pointer;font-size:13px" title="Editar">✏️</button></td>
-    </tr>`).join('')
+
+  if(mode==='tarjetas'){
+    const cardsWrap = document.getElementById('dir-view-cards-wrap')
+    if(cardsWrap){
+      cardsWrap.innerHTML = !dirFiltered.length
+        ? `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Sin resultados con estos filtros</div>`
+        : page.map(r=>`
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer" onclick="dirOpenModal(${r.id})">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+              <div style="font-size:13px;font-weight:600;line-height:1.3">${esc(r.nombre_establecimiento||r.razon_social||'—')}</div>
+              ${dirTierBadge(r.tier)}
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${esc(r.giro||'—')} · ${esc(r.sector||'—')}</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">📍 ${esc(r.municipio||'—')}, ${esc(r.estado||'—')} · ${esc(r.zona_menlun||'—')}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              ${dirEstatusBadge(r.estatus)}
+              <span style="font-size:11px;color:var(--muted)">${esc(r.vendedor_asignado||'—')}</span>
+            </div>
+          </div>`).join('')
+    }
+  } else {
+    const tbody = document.getElementById('dir-tbody')
+    if(!tbody) return
+    if(!dirFiltered.length){
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados con estos filtros</td></tr>`
+      dirRenderPagination(); return
+    }
+    tbody.innerHTML = page.map(r=>`
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:7px 10px;font-weight:500;font-size:12px">${esc(r.nombre_establecimiento||r.razon_social||'—')}</td>
+        <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.giro||'—')}</td>
+        <td style="padding:7px 10px;font-size:11px">${esc(r.sector||'—')}</td>
+        <td style="padding:7px 10px">${dirTierBadge(r.tier)}</td>
+        <td style="padding:7px 10px;font-size:12px">${esc(r.municipio||'—')}</td>
+        <td style="padding:7px 10px;font-size:12px">${esc(r.estado||'—')}</td>
+        <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.zona_menlun||'—')}</td>
+        <td style="padding:7px 10px">${dirEstatusBadge(r.estatus)}</td>
+        <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.vendedor_asignado||'—')}</td>
+        <td style="padding:7px 10px"><button onclick="dirOpenModal(${r.id})" style="background:none;border:none;cursor:pointer;font-size:13px" title="Editar">✏️</button></td>
+      </tr>`).join('')
+  }
+
   const total = dirFiltered.length, end = Math.min(start+DIR_PAGE_SIZE, total)
   const info = document.getElementById('dir-page-info')
-  if(info) info.textContent = `Mostrando ${(start+1).toLocaleString('es-MX')}–${end.toLocaleString('es-MX')} de ${total.toLocaleString('es-MX')}`
+  if(info) info.textContent = total ? `Mostrando ${(start+1).toLocaleString('es-MX')}–${end.toLocaleString('es-MX')} de ${total.toLocaleString('es-MX')}` : '—'
   dirRenderPagination()
 }
 
