@@ -335,6 +335,17 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         style="display:flex;align-items:center;gap:6px;background:#E4F2FC;color:#123A63;border:1px solid #B3DFF5;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">
         <span id="btn-refrescar-icon" style="display:inline-block;font-size:13px">🔄</span> Actualizar datos
       </button>
+      <div style="position:relative">
+        <button id="notif-bell" onclick="event.stopPropagation();toggleNotifDropdown()" title="Notificaciones"
+          style="position:relative;display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:15px">
+          🔔
+          <span id="notif-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--red,#A32D2D);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:9.5px;font-weight:700;align-items:center;justify-content:center;padding:0 3px">0</span>
+        </button>
+        <div id="notif-dropdown" style="display:none;position:absolute;right:0;top:40px;width:300px;max-height:360px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(18,58,99,.14);z-index:50">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:12.5px">Notificaciones</div>
+          <div id="notif-list"></div>
+        </div>
+      </div>
       <div class="user-chip" onclick="doLogout()">
         <div class="user-avatar" id="header-avatar">JC</div>
         <div class="user-name" id="header-name">José Carlos</div>
@@ -1879,7 +1890,13 @@ async function doLogin(){
   }
   reloj(); setInterval(reloj,1000);
   cargarDatos();
+  renderNotifCampana();
+  setInterval(renderNotifCampana, 60000);
 }
+document.addEventListener('click', e=>{
+  const dd = document.getElementById('notif-dropdown');
+  if(dd && dd.style.display==='block' && !dd.contains(e.target) && e.target.id!=='notif-bell') dd.style.display='none';
+});
 document.getElementById('login-pin').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 
 function doLogout(){
@@ -3230,6 +3247,78 @@ function renderAutomatizaciones(){
   }).join('')
 
   autoUpdateBadge()
+  syncNotificaciones(leadsSinContacto, clientesCxc, clientesPagoVence)
+}
+
+// ── Notificaciones: persiste en Supabase las mismas 3 alertas de Automatizaciones,
+// una por destinatario (responsable del lead/cliente), para el centro de notificaciones. ──
+async function sbRpc(fn, args){
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method:'POST', headers:getHdr(), body: JSON.stringify(args)
+  })
+  if(!res.ok) throw new Error(await res.text())
+  return res.status===204 ? null : res.json()
+}
+async function syncNotificaciones(leadsSinContacto, clientesCxc, clientesPagoVence){
+  try{
+    const jobs = []
+    leadsSinContacto.forEach(l=>{
+      const dest = l.responsable || 'Administrador'
+      jobs.push(sbRpc('crear_notificacion', {
+        p_usuario: dest, p_tipo:'lead_frio', p_titulo:'Lead sin contacto',
+        p_mensaje: `"${l.empresa}" lleva ${diasDesde(l.ultimo_movimiento)} días sin movimiento.`,
+        p_origen_tabla:'leads', p_origen_id: String(l.id||l.empresa)
+      }))
+    })
+    clientesCxc.forEach(c=>{
+      const dest = c.responsable || 'Administrador'
+      jobs.push(sbRpc('crear_notificacion', {
+        p_usuario: dest, p_tipo:'cuenta_por_cobrar', p_titulo:'Cuenta por cobrar pendiente',
+        p_mensaje: `"${c.empresa}" tiene una cuenta por cobrar sin pago registrado.`,
+        p_origen_tabla:'clientes', p_origen_id: String(c.id||c.empresa)
+      }))
+    })
+    clientesPagoVence.forEach(c=>{
+      const dest = c.responsable || 'Administrador'
+      jobs.push(sbRpc('crear_notificacion', {
+        p_usuario: dest, p_tipo:'pago_vence', p_titulo:'Pago por vencer',
+        p_mensaje: `"${c.empresa}" tiene un pago que vence ${fmtFecha(c.ciclo?.pago_fecha_val)}.`,
+        p_origen_tabla:'clientes', p_origen_id: String(c.id||c.empresa)
+      }))
+    })
+    await Promise.allSettled(jobs)
+    renderNotifCampana()
+  }catch(e){ /* silencioso: notificaciones son un extra, no deben romper el resto de la app */ }
+}
+async function renderNotifCampana(){
+  const bell = document.getElementById('notif-bell')
+  if(!bell || !currentUser) return
+  try{
+    const rows = await sbGet('notificaciones','*',`&usuario_nombre=eq.${encodeURIComponent(currentUser.nombre)}&order=creado_en.desc&limit=30`)
+    const noLeidas = rows.filter(r=>!r.leido)
+    const badge = document.getElementById('notif-badge')
+    if(badge){ badge.style.display = noLeidas.length ? 'flex' : 'none'; badge.textContent = noLeidas.length>9?'9+':noLeidas.length }
+    const list = document.getElementById('notif-list')
+    if(list){
+      list.innerHTML = rows.length ? rows.map(r=>`
+        <div onclick="marcarNotifLeida('${r.id}')" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;${r.leido?'opacity:.5':''};background:${r.leido?'transparent':'var(--blue-bg,#EAF3FC)'}">
+          <div style="font-weight:600;font-size:12.5px">${esc(r.titulo)}</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(r.mensaje)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">${new Date(r.creado_en).toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'})}</div>
+        </div>`).join('')
+        : `<div style="padding:20px;text-align:center;font-size:12px;color:var(--muted)">Sin notificaciones</div>`
+    }
+  }catch(e){ /* ignorar */ }
+}
+async function marcarNotifLeida(id){
+  try{ await sbRpc('marcar_notificacion_leida', {p_id:id, p_nombre: currentUser.nombre}); renderNotifCampana() }catch(e){}
+}
+function toggleNotifDropdown(){
+  const dd = document.getElementById('notif-dropdown')
+  if(!dd) return
+  const showing = dd.style.display === 'block'
+  dd.style.display = showing ? 'none' : 'block'
+  if(!showing) renderNotifCampana()
 }
 
 async function autoExecLeadsFrios(){
