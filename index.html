@@ -320,8 +320,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <div id="app">
   <div class="header">
     <div class="header-left">
-      <div class="logo-mark">P</div>
+      <svg width="30" height="30" viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+        <path d="M100 6 C 62 52, 34 92, 34 136 C 34 172, 64 198, 100 198 C 136 198, 166 172, 166 136 C 166 92, 138 52, 100 6 Z" fill="#123A63"/>
+        <path d="M100 100 C 87 118, 80 132, 80 146 C 80 161, 89 172, 100 172 C 111 172, 120 161, 120 146 C 120 132, 113 118, 100 100 Z" fill="#F2F6FB"/>
+        <path d="M100 112 C 90 126, 85 137, 85 148 C 85 159, 92 167, 100 167 C 108 167, 115 159, 115 148 C 115 137, 110 126, 100 112 Z" fill="#29ABE2"/>
+        <path d="M52 178 A 48 20 0 0 0 148 178 Z" fill="#29ABE2"/>
+      </svg>
       <div class="header-title">PMPS CRM</div>
+      <div style="background:#E4F2FC;color:#123A63;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:.03em;margin-left:2px">CRM V2</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <div style="font-size:11px;color:var(--muted)" id="sync-status"></div>
@@ -335,11 +341,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   </div>
 
   <div class="nav">
-    <div class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')"><span class="nav-ico">📊</span> Mi Dashboard</div>
-    <div class="nav-item" id="nav-leads" onclick="switchTab('leads')"><span class="nav-ico">🎯</span> Mis Leads</div>
-    <div class="nav-item" id="nav-clientes" onclick="switchTab('clientes')"><span class="nav-ico">🏢</span> Mis Clientes</div>
-    <div class="nav-item" id="nav-reportes" onclick="switchTab('reportes')"><span class="nav-ico">📈</span> Reportes</div>
-    <div class="nav-item" id="nav-admin" onclick="switchTab('admin')" style="display:none;color:#1B2A4A;font-weight:700"><span class="nav-ico">⚙️</span> Administrador</div>
+    <div class="nav-item active" id="nav-crm" onclick="openCrmHub()"><span class="nav-ico">🗂️</span> CRM</div>
     <div class="nav-item" id="nav-catalogo" onclick="switchTabNuevo('catalogo')"><span class="nav-ico">📦</span> Catálogo</div>
     <div class="nav-item" id="nav-equipos" onclick="switchTabNuevo('equipos')"><span class="nav-ico">🖥️</span> Equipos</div>
     <div class="nav-item" id="nav-rep-fo" onclick="switchTabNuevo('rep-fo')"><span class="nav-ico">📋</span> Reportes FO-VE-01</div>
@@ -347,6 +349,24 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div class="nav-item" id="nav-ventas-hist" onclick="switchTabNuevo('ventas-hist')" style="display:none"><span class="nav-ico">📊</span> Ventas Hist.</div>
     <div class="nav-item" id="nav-presupuesto" onclick="switchTabNuevo('presupuesto')" style="display:none"><span class="nav-ico">💰</span> Presupuesto</div>
     <div class="nav-item" id="nav-directorio" onclick="switchTabNuevo('directorio')"><span class="nav-ico">📇</span> Directorio</div>
+  </div>
+
+  <!-- Sub-navegación del área CRM (v1: Dashboard/Leads/Clientes/Reportes/Admin) -->
+  <div id="crm-subnav" style="display:flex;gap:0;border-bottom:1px solid var(--border);margin:0 24px 16px;overflow-x:auto">
+    <button class="atab atab-active" id="crmtab-dashboard" onclick="switchTab('dashboard')">📊 Mi Dashboard</button>
+    <button class="atab" id="crmtab-leads" onclick="switchTab('leads')">🎯 Mis Leads</button>
+    <button class="atab" id="crmtab-clientes" onclick="switchTab('clientes')">🏢 Mis Clientes</button>
+    <button class="atab" id="crmtab-reportes" onclick="switchTab('reportes')">📈 Reportes</button>
+    <button class="atab" id="crmtab-admin" onclick="switchTab('admin')" style="display:none">⚙️ Administrador</button>
+  </div>
+
+  <!-- Elementos v1 originales — ocultos: se conservan solo para no romper referencias existentes -->
+  <div style="display:none">
+    <div class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')"><span class="nav-ico">📊</span> Mi Dashboard</div>
+    <div class="nav-item" id="nav-leads" onclick="switchTab('leads')"><span class="nav-ico">🎯</span> Mis Leads</div>
+    <div class="nav-item" id="nav-clientes" onclick="switchTab('clientes')"><span class="nav-ico">🏢</span> Mis Clientes</div>
+    <div class="nav-item" id="nav-reportes" onclick="switchTab('reportes')"><span class="nav-ico">📈</span> Reportes</div>
+    <div class="nav-item" id="nav-admin" onclick="switchTab('admin')"><span class="nav-ico">⚙️</span> Administrador</div>
   </div>
 
   <div class="content">
@@ -1506,6 +1526,8 @@ const isAdmin = () => currentUser?.name === 'Administrador';
 
 let currentUser = null;
 let sessionPin = null;
+let crmDefaultTab = 'dashboard';
+function openCrmHub(){ switchTab(crmDefaultTab); }
 let leads = [];
 let clientes = [];
 
@@ -1669,11 +1691,12 @@ function doLogin(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   const esAdmin = isAdmin();
-  // Tabs CRM v1
-  document.getElementById('nav-admin').style.display     = esAdmin ? 'flex' : 'none';
-  document.getElementById('nav-dashboard').style.display = esAdmin ? 'none' : 'flex';
-  document.getElementById('nav-leads').style.display     = esAdmin ? 'none' : 'flex';
-  document.getElementById('nav-clientes').style.display  = esAdmin ? 'none' : 'flex';
+  // Tabs CRM v1 (ahora dentro del hub "CRM" — ver crm-subnav)
+  document.getElementById('crmtab-admin').style.display     = esAdmin ? 'inline-block' : 'none';
+  document.getElementById('crmtab-dashboard').style.display = esAdmin ? 'none' : 'inline-block';
+  document.getElementById('crmtab-leads').style.display     = esAdmin ? 'none' : 'inline-block';
+  document.getElementById('crmtab-clientes').style.display  = esAdmin ? 'none' : 'inline-block';
+  crmDefaultTab = esAdmin ? 'admin' : 'dashboard';
   // Tabs nuevos — solo admin
   ['nav-forecast','nav-ventas-hist','nav-presupuesto'].forEach(id => {
     const el = document.getElementById(id);
@@ -1717,6 +1740,13 @@ function switchTab(tab){
     document.getElementById('nav-'+t).classList.toggle('active', t===tab);
     document.getElementById('panel-'+t).classList.toggle('active', t===tab);
   });
+  // Hub CRM (v1): mostrar sub-nav y marcar el botón activo
+  document.getElementById('nav-crm')?.classList.add('active');
+  const subnav = document.getElementById('crm-subnav');
+  if(subnav) subnav.style.display = 'flex';
+  document.querySelectorAll('#crm-subnav .atab').forEach(b=>b.classList.remove('atab-active'));
+  document.getElementById('crmtab-'+tab)?.classList.add('atab-active');
+  crmDefaultTab = tab;
   if(tab==='reportes') renderReportes();
   if(tab==='admin') renderAdminPanel();
 }
@@ -4467,6 +4497,9 @@ function switchTabNuevo(panel) {
     if(p) p.classList.remove('active')
     if(n) n.classList.remove('active')
   })
+  // Ocultar sub-nav del hub CRM (v1)
+  const crmSubnav = document.getElementById('crm-subnav')
+  if(crmSubnav) crmSubnav.style.display = 'none'
 
   // Ocultar wraps de módulos nuevos
   document.querySelectorAll('[id$="-wrap"][id^="tab-"]').forEach(t => t.style.display='none')
