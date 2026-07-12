@@ -58,4 +58,16 @@ Empezamos por lo que es rápido y de cero riesgo (auditoría), seguido de lo que
 - **⏸️ PAUSADA a propósito (2026-07-12)**: para que ningún usuario reciba correos automáticos antes de que se libere v2 y se confunda, los dos jobs de cron (`run-automatizaciones-manana`, `run-automatizaciones-tarde`) fueron desactivados (`cron.unschedule`). La función sigue desplegada y lista — solo hay que re-agendarla cuando decidan liberar v2. Para reactivarla, correr de nuevo el `cron.schedule(...)` de ambos horarios (8am/2pm hora de México) contra la función `run-automatizaciones`.
 - **⏸️ CC a José Carlos pausado también (2026-07-12)**: mientras la automática está detenida, el correo que sí sigue activo es el que se dispara al abrir la app. Para que José Carlos no reciba nada antes de que Pako le avise, se desplegó `send-email` v4 con una bandera `CC_JOSE_CARLOS_ACTIVO = false` — nadie le manda copia por ahora. Cuando Pako le avise (le dijo que mañana entra a revisar y le explica que empezará a recibir correos de prueba), avisar para cambiar la bandera a `true` y redesplegar (toma 1 minuto).
 
+## Nueva línea de negocio: reutilizar como base para futuros clientes (2026-07-12)
+
+Decisión de Pako: considerar PMPS OS v2 como plantilla base para clientes con requerimientos similares (CRM + automatizaciones + reportes), no solo como sistema exclusivo de Menlun.
+
+- **Reutilizable tal cual (core)**: autenticación (Supabase Auth), sistema de notificaciones + correo real, motor de Workflow visual configurable, auditoría de cambios (`activity_log`), exportación PDF/Excel, arquitectura base (single-file + Supabase + Vercel).
+- **A adaptar por cliente**: módulos de negocio específicos (Presupuesto/Forecast/Ventas Históricas están hechos a la medida de cómo Menlun organiza sus datos), rebrand visual (logo/colores/nombre), nombres de campos y etapas del embudo si el giro del cliente es distinto.
+- **Pendiente antes de vender esto como plantilla**:
+  - Separar código en capa "core" (reutilizable) vs. capa "custom Menlun", para que el siguiente desarrollo no arrastre nada específico de este cliente.
+  - Cada cliente futuro necesita su propio proyecto de Supabase (no compartir base de datos entre clientes).
+  - Cada cliente futuro necesita su propia key de Resend/dominio de correo (o operarlo Pako en su nombre, a definir).
+- **Estimado de costo de mercado si se mandara hacer de cero** (referencia, no cotización formal): freelancer senior en México ~$350,000-700,000 MXN (4-6 meses); agencia de software ~$25,000-60,000 USD; freelancer remoto económico ~$10,000-18,000 USD. La ventaja real de este desarrollo fue la velocidad (días, no meses) gracias al trabajo asistido por IA.
+
 (Marca cada uno aquí conforme se vaya cerrando, o pídeme que lo actualice.)
