@@ -572,6 +572,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button onclick="switchAdminTab('todos-leads')" id="atab-todos-leads" class="atab">🎯 Todos los Leads</button>
         <button onclick="switchAdminTab('todos-clientes')" id="atab-todos-clientes" class="atab">🏢 Todos los Clientes</button>
         <button onclick="switchAdminTab('automatizaciones')" id="atab-automatizaciones" class="atab">🤖 Automatizaciones <span id="atab-automatizaciones-badge" style="display:none;background:#A32D2D;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px">0</span></button>
+        <button onclick="switchAdminTab('actividad')" id="atab-actividad" class="atab">🕓 Actividad</button>
         <button onclick="switchAdminTab('importar')" id="atab-importar" class="atab">⬇️ Importar</button>
         <button onclick="switchAdminTab('migrar')" id="atab-migrar" class="atab">🔄 Migrar</button>
         <button onclick="switchAdminTab('usuarios')" id="atab-usuarios" class="atab">👥 Usuarios</button>
@@ -619,6 +620,28 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           Reglas <b>trigger → condición → acción</b> que se evalúan en tiempo real contra tus leads y clientes. Actívalas o desactívalas, y ejecuta la acción con un clic — sin pasos manuales.
         </div>
         <div id="automatizaciones-list"></div>
+      </div>
+
+      <!-- TAB: ACTIVIDAD (historial de cambios) -->
+      <div id="apanel-actividad" style="display:none">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Quién cambió qué y cuándo, en Forecast, Presupuesto, Ventas Históricas, Catálogo, Equipos y Reportes FO-VE-01. Se registra automáticamente en cada guardado.
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+          <select id="actividad-filter-tabla" onchange="renderActividad()" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;background:var(--bg);margin:0">
+            <option value="">Todos los módulos</option>
+            <option value="forecast_2026">Forecast</option>
+            <option value="presupuesto_2026">Presupuesto (general)</option>
+            <option value="presupuesto_asesores">Presupuesto (asesores)</option>
+            <option value="productos">Catálogo</option>
+            <option value="equipos_comodato">Equipos en comodato</option>
+            <option value="ventas_historicas">Ventas Históricas</option>
+            <option value="reportes">Reportes FO-VE-01</option>
+          </select>
+          <button class="btn-export-xls" onclick="renderActividad()" style="margin:0">🔄 Actualizar</button>
+        </div>
+        <div id="actividad-list"></div>
+        <div id="actividad-empty" style="display:none" class="empty-state">Sin actividad registrada todavía</div>
       </div>
 
       <!-- TAB: ENTRANTES DEL DIRECTORIO -->
@@ -3027,7 +3050,7 @@ function renderEntrantesCount(){
 }
 
 function switchAdminTab(tab){
-  const tabs = ['overview','kanban','entrantes','todos-leads','todos-clientes','automatizaciones','importar','migrar','usuarios','claves'];
+  const tabs = ['overview','kanban','entrantes','todos-leads','todos-clientes','automatizaciones','actividad','importar','migrar','usuarios','claves'];
   tabs.forEach(t=>{
     const panel = document.getElementById('apanel-'+t);
     const btn = document.getElementById('atab-'+t);
@@ -3044,6 +3067,49 @@ function switchAdminTab(tab){
   }
   if(tab==='todos-clientes') renderAdminClientes();
   if(tab==='automatizaciones') renderAutomatizaciones();
+  if(tab==='actividad') renderActividad();
+}
+
+// ── ACTIVIDAD (historial de cambios / auditoría) ──
+const ACTIVIDAD_LABELS = {
+  forecast_2026:'Forecast', presupuesto_2026:'Presupuesto (general)', presupuesto_asesores:'Presupuesto (asesores)',
+  productos:'Catálogo', equipos_comodato:'Equipos en comodato', ventas_historicas:'Ventas Históricas',
+  reportes:'Reportes FO-VE-01', leads_menlun:'Directorio'
+};
+function actividadResumenCampos(campos){
+  if(!campos) return '';
+  try{
+    const obj = typeof campos==='string' ? JSON.parse(campos) : campos;
+    return Object.entries(obj).map(([k,v])=>`${k}: ${String(v).slice(0,40)}`).join(', ');
+  }catch(e){ return ''; }
+}
+async function renderActividad(){
+  const el = document.getElementById('actividad-list');
+  const empty = document.getElementById('actividad-empty');
+  el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0">Cargando...</div>';
+  const filtro = document.getElementById('actividad-filter-tabla')?.value || '';
+  let extra = '&order=creado_en.desc&limit=100';
+  if(filtro) extra += `&tabla=eq.${filtro}`;
+  const rows = await sbGet('activity_log','*',extra).catch(()=>[]);
+  if(!rows.length){ el.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  el.innerHTML = rows.map(r=>{
+    const fecha = new Date(r.creado_en).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'});
+    const accionBadge = r.accion==='insert'
+      ? '<span style="background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:2px 8px;font-size:10.5px;font-weight:600">Creado</span>'
+      : '<span style="background:var(--amber-bg);color:var(--amber);border-radius:6px;padding:2px 8px;font-size:10.5px;font-weight:600">Editado</span>';
+    return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--surface)">
+      <div style="min-width:130px;font-size:11px;color:var(--muted);font-family:var(--mono)">${fecha}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;flex-wrap:wrap">
+          ${accionBadge}
+          <b style="font-size:12.5px">${ACTIVIDAD_LABELS[r.tabla]||r.tabla}</b>
+          <span style="font-size:11.5px;color:var(--muted)">por ${r.usuario||'—'}</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);word-break:break-word">${actividadResumenCampos(r.campos)}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── AUTOMATIZACIONES (trigger → condición → acción) ──
