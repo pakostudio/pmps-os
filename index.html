@@ -353,6 +353,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div class="nav-item" id="nav-ventas-hist" onclick="switchTabNuevo('ventas-hist')" style="display:none"><span class="nav-ico">📊</span> Ventas Hist.</div>
     <div class="nav-item" id="nav-presupuesto" onclick="switchTabNuevo('presupuesto')" style="display:none"><span class="nav-ico">💰</span> Presupuesto</div>
     <div class="nav-item" id="nav-directorio" onclick="switchTabNuevo('directorio')"><span class="nav-ico">📇</span> Directorio</div>
+    <div class="nav-item" id="nav-ayuda" onclick="switchTabNuevo('ayuda')"><span class="nav-ico">❓</span> Ayuda</div>
   </div>
 
   <!-- Sub-navegación del área CRM (v1: Dashboard/Leads/Clientes/Reportes/Admin) -->
@@ -1450,6 +1451,28 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
   </div>
 
+  <!-- ══ AYUDA (FAQ + Manual) ══ -->
+  <div id="tab-ayuda-wrap" class="tab-content" style="display:none;padding:16px">
+    <div class="card mb16" style="padding:24px;background:linear-gradient(135deg,#123A63,#1B4D82);border:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">📘 Manual de Usuario — PMPS CRM V2</div>
+          <div style="font-size:13px;color:#D6E8F7">Guía completa, paso a paso, pensada para quien nunca ha usado el sistema.</div>
+        </div>
+        <a href="./Manual_Usuario_PMPS_CRM_V2.pdf" download target="_blank"
+          style="display:flex;align-items:center;gap:8px;background:#fff;color:#A32D2D;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap">
+          <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:22px;height:22px"/>
+          Descargar Manual (PDF)
+        </a>
+      </div>
+    </div>
+
+    <div class="card" style="padding:20px">
+      <div class="section-title" style="margin-bottom:14px">❓ Preguntas frecuentes</div>
+      <div id="faq-list"></div>
+    </div>
+  </div>
+
   <!-- Modal edición Directorio -->
   <div id="modal-dir" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:center;justify-content:center;padding:8px">
     <div style="background:#fff;border-radius:16px;width:440px;max-width:95vw;max-height:calc(100vh - 16px);overflow-y:auto">
@@ -1530,6 +1553,47 @@ const isAdmin = () => currentUser?.name === 'Administrador';
 
 let currentUser = null;
 let sessionPin = null;
+// ── FAQ ──────────────────────────────────────────────
+const FAQ_DATA = [
+  {q:'¿Cómo entro al sistema?', a:'En la pantalla de inicio, selecciona tu nombre en el menú "Nombre" y escribe tu clave de acceso en "Clave de acceso". Da clic en "Entrar". Si tu clave no funciona, pide al Administrador que la verifique en Administrador → Claves.'},
+  {q:'¿Qué es "CRM" en el menú y en qué se diferencia de los demás módulos?', a:'El botón "CRM" agrupa las herramientas originales del sistema: Mi Dashboard, Mis Leads, Mis Clientes, Reportes y (solo para el Administrador) el Panel de Administrador. Los demás botones del menú (Catálogo, Equipos, Reportes FO-VE-01, Forecast, Ventas Hist., Presupuesto, Directorio) son módulos nuevos, independientes del CRM, cada uno con su propia información.'},
+  {q:'¿Qué hace el botón "Actualizar datos" de arriba?', a:'Vuelve a traer la información más reciente de todos los módulos que hayas abierto en tu sesión (leads, clientes, catálogo, forecast, ventas, presupuesto, equipos, directorio) sin necesidad de recargar la página. Úsalo si un compañero acaba de capturar algo y tú no lo ves todavía.'},
+  {q:'Un asesor capturó información y yo no la veo, ¿qué hago?', a:'Da clic en "🔄 Actualizar datos" en la parte superior. Si después de unos segundos sigue sin aparecer, revisa que el asesor haya guardado correctamente (debe ver un mensaje verde de confirmación) y que ambos estén viendo la misma pestaña/módulo.'},
+  {q:'¿Cómo agrego un nuevo lead o prospecto?', a:'Ve a CRM → Mis Leads y presiona el botón "+ Agregar prospecto". Llena empresa, contacto, teléfono, valor estimado y etapa, y guarda. El lead aparecerá de inmediato en tu lista y en el Kanban de Reportes.'},
+  {q:'¿Cómo muevo un lead de una etapa a otra (por ejemplo de "Contactado" a "Propuesta")?', a:'Puedes editarlo desde Mis Leads y cambiar el campo "Etapa", o ir a CRM → Reportes → pestaña Kanban y arrastrar la tarjeta del lead directamente a la columna de la nueva etapa.'},
+  {q:'¿Qué significa un lead marcado como "❄️ Frío"?', a:'Un lead se marca como frío automáticamente cuando pasan 7 días o más sin ningún movimiento registrado. Es una señal para retomar el contacto cuanto antes.'},
+  {q:'¿Qué es la pestaña "Automatizaciones" en el Panel de Administrador?', a:'Es un panel que revisa solo, en tiempo real, tres situaciones: leads sin contacto por 7 días o más, clientes con cuenta por cobrar pendiente, y pagos por vencer en los próximos 3 días. Cada regla se puede activar/desactivar y tiene un botón para ejecutar la acción correspondiente (marcar frío, copiar recordatorio de cobro, etc.).'},
+  {q:'¿Cómo cambio entre ver el Catálogo o el Directorio en Tabla o en Tarjetas?', a:'En la parte superior de esas pantallas hay dos botones: "☰ Tabla" y "▦ Tarjetas". El sistema recuerda cuál elegiste la próxima vez que entres.'},
+  {q:'¿Qué es "Forecast ponderado por probabilidad" en Presupuesto?', a:'En Presupuesto → pestaña de cada asesor, los meses que todavía no tienen venta real permiten capturar un porcentaje de probabilidad (0-100%). El sistema calcula una columna "Ponderado" (presupuesto × probabilidad) y un total de "Proyección ponderada" más realista que el presupuesto completo.'},
+  {q:'Olvidé mi clave de acceso, ¿qué hago?', a:'Pide al Administrador que entre a Administrador → Claves y te confirme o te asigne una nueva. Por seguridad, ningún usuario (ni el Administrador) puede ver la clave de otra persona directamente escrita en ningún lado del sistema.'},
+  {q:'¿Los cambios que hago se guardan solos o necesito apretar un botón?', a:'Depende del módulo: en Presupuesto los cambios se guardan automáticamente al salir del cuadro que editaste (verás un mensaje "Actualizado ✓"). En Forecast hay un botón "💾 Guardar cambios". En Equipos, Catálogo y Ventas Históricas usas el ícono de lápiz ✏️, editas en la ventana que se abre, y presionas "💾 Guardar".'},
+  {q:'¿Puedo usar el sistema desde mi celular?', a:'Sí, es una página web normal — solo entra a la misma dirección desde el navegador de tu celular e inicia sesión igual que en computadora. Algunas tablas grandes se ven mejor en una pantalla más ancha.'},
+  {q:'¿A quién le aviso si encuentro un error o algo no funciona?', a:'Repórtaselo directamente al Administrador con la mayor cantidad de detalle posible: qué estabas haciendo, en qué módulo, y si es posible una captura de pantalla.'},
+];
+
+function renderFAQ(){
+  const wrap = document.getElementById('faq-list')
+  if(!wrap) return
+  wrap.innerHTML = FAQ_DATA.map((item,i)=>`
+    <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
+      <div onclick="toggleFAQ(${i})" id="faq-q-${i}"
+        style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);font-weight:600;font-size:13px">
+        <span>${esc(item.q)}</span>
+        <span id="faq-icon-${i}" style="transition:transform .15s;color:var(--muted)">▾</span>
+      </div>
+      <div id="faq-a-${i}" style="display:none;padding:0 16px 16px;font-size:13px;color:var(--muted);line-height:1.5">${esc(item.a)}</div>
+    </div>`).join('')
+}
+
+function toggleFAQ(i){
+  const a = document.getElementById('faq-a-'+i)
+  const icon = document.getElementById('faq-icon-'+i)
+  if(!a) return
+  const open = a.style.display === 'block'
+  a.style.display = open ? 'none' : 'block'
+  if(icon) icon.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)'
+}
+
 let crmDefaultTab = 'dashboard';
 function openCrmHub(){ switchTab(crmDefaultTab); }
 let lastActiveArea = {kind:'crm', tab:'dashboard'};
@@ -1739,7 +1803,7 @@ function doLogin(){
     if(el) el.style.display = esAdmin ? 'flex' : 'none';
   });
   // Tabs nuevos — todos los usuarios
-  ['nav-catalogo','nav-equipos','nav-rep-fo'].forEach(id => {
+  ['nav-catalogo','nav-equipos','nav-rep-fo','nav-ayuda'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.display = 'flex';
   });
@@ -4571,6 +4635,7 @@ function switchTabNuevo(panel) {
         const dmlw = document.getElementById('dir-mis-leads-wrap')
         if(dmlw) dmlw.style.display = currentUser.rol==='admin' ? 'none' : 'flex'
         break
+      case 'ayuda': renderFAQ(); break
     }
   }
   lastActiveArea = {kind:'v2', tab:panel};
