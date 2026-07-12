@@ -32,6 +32,8 @@ Empezamos por lo que es rápido y de cero riesgo (auditoría), seguido de lo que
 - [x] Auditoría / historial de cambios — tabla `activity_log` + pestaña "Actividad" en Administrador
 - [x] Autenticación real (Supabase Auth) — 6 cuentas con email+contraseña verificadas en el servidor; probado en vivo (admin, vendedor, contraseña incorrecta rechazada)
 - [x] Notificaciones — centro de notificaciones en la app (campana con contador, por usuario, tabla `notificaciones` en Supabase) **+ envío real por correo vía Resend**, probado en vivo (correo recibido, status 200). Solo envía a usuarios con cuenta real de Supabase Auth (los 6 con correo); Daniel/Invitado siguen viendo el aviso solo dentro de la app.
+- [x] **José Carlos copiado siempre (CC)** en todo correo de notificación, tanto el que se dispara al abrir la app como el automático — implementado en las dos funciones de envío (`send-email` y `run-automatizaciones`), verificado en el código desplegado.
+- [x] **Automatización 100% independiente de la app** — nueva función `run-automatizaciones` en Supabase, corre sola dos veces al día (8:00 am y 2:00 pm hora de México) vía `pg_cron` + `pg_net`, sin que nadie tenga que abrir PMPS CRM. Revisa leads/clientes/reglas de Workflow y manda notificación + correo (con José Carlos en copia) cuando hay algo nuevo que avisar. Probada en vivo end-to-end (status 200, `ok:true`).
 - [x] Integraciones externas fase 1 (sin costo/credenciales) — botón 💬 WhatsApp (abre chat directo) en Leads/Clientes/Directorio, y botón 📅 para descargar recordatorio .ics (Google/Outlook/Apple Calendar) en pagos por vencer. Probado en vivo. Correo real sigue bloqueado (ver bloqueadores).
 - [x] Workflow visual configurable — nuevo tab "⚙️ Workflow" en Administrador: crea reglas propias (módulo, campo, condición, valor, mensaje) sin tocar código, además de las 3 fijas de Automatizaciones. Cada regla activa genera notificaciones reales. Probado en vivo con una regla real (13 coincidencias correctas).
 
@@ -47,5 +49,11 @@ Empezamos por lo que es rápido y de cero riesgo (auditoría), seguido de lo que
 - Nota: el dashboard de Supabase de este proyecto (`invwksntpqxsmkqycybf`) no es visible desde la cuenta de Supabase con la que Pako tiene sesión iniciada en Chrome (esa cuenta solo ve el proyecto "ProKicks Arena") — por eso se optó por este método en vez de guardar la key como "secret" del proyecto vía dashboard. Si en algún momento se quiere mover la key a una variable de entorno real, hace falta entrar al dashboard con la cuenta correcta que sí administra este proyecto.
 - Solo envía a los 6 usuarios con cuenta real de Supabase Auth (requiere JWT válido); Daniel/Invitado siguen viendo el aviso solo dentro de la app hasta que tengan cuenta.
 - Remitente: `notificaciones@sportcstudio.com`.
+
+### Cómo quedó armado "no dejar nada suelto" en notificaciones (2026-07-12)
+
+- **José Carlos en copia siempre**: las dos funciones que mandan correo (`send-email`, disparada al abrir la app, y `run-automatizaciones`, la automática) agregan a José Carlos en CC en cada correo, salvo que él mismo sea el destinatario principal (para no mandarle dos copias).
+- **Corre sola, sin depender de que alguien abra la app**: nueva función `run-automatizaciones` en Supabase, programada con `pg_cron` + `pg_net` para ejecutarse dos veces al día — 8:00 am y 2:00 pm hora de Ciudad de México. Revisa leads/clientes contra las reglas fijas y las de Workflow, crea la notificación y manda el correo (con José Carlos en copia) si es algo nuevo.
+- Probada en vivo simulando exactamente cómo la llamaría el cron: respuesta `status_code: 200`, `{"ok":true,"notificaciones_nuevas":0}` — corrió sin errores; el "0 nuevas" es porque en ese momento no había nada que no se hubiera avisado ya (el sistema evita duplicados a propósito).
 
 (Marca cada uno aquí conforme se vaya cerrando, o pídeme que lo actualice.)
