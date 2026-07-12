@@ -2276,7 +2276,11 @@ function renderRepKanban(){
   el.innerHTML = etapas.map(etapa=>{
     const etapaLeads = leads.filter(l=>l.etapa===etapa);
     const total = etapaLeads.reduce((s,l)=>s+(parseFloat(l.valor||0)||0),0);
-    return `<div style="background:var(--surface2);border-radius:10px;padding:10px;min-height:160px">
+    return `<div class="kanban-col" data-etapa="${etapa}"
+        ondragover="event.preventDefault();this.style.background='#E4F2FC'"
+        ondragleave="this.style.background='var(--surface2)'"
+        ondrop="kanbanDropLead(event,'${etapa}')"
+        style="background:var(--surface2);border-radius:10px;padding:10px;min-height:160px;transition:background .15s">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ${colores[etapa]}">
         <div style="flex:1;font-size:12px;font-weight:600">${etapa}</div>
         <div style="background:${colores[etapa]};color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:600">${etapaLeads.length}</div>
@@ -2287,19 +2291,41 @@ function renderRepKanban(){
         const ini = USERS_LIVE[l.responsable]?.initials||'?';
         const dias = diasDesde(l.ultimo_movimiento);
         const frio = dias>=7;
-        return `<div style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;border:1px solid ${frio?'#F09595':'var(--border)'}">
-          <div style="font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.empresa}</div>
+        return `<div draggable="true" ondragstart="kanbanDragStart(event,'${l.id}')"
+          style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;border:1px solid ${frio?'#F09595':'var(--border)'};cursor:grab">
+          <div style="font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.empresa)}</div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="display:flex;align-items:center;gap:4px">
               <div style="width:16px;height:16px;border-radius:50%;background:${col};color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;flex-shrink:0">${ini}</div>
               <span style="font-size:10px;color:var(--muted)">${fmtValor(l.valor)}</span>
             </div>
-            <span style="font-size:10px;color:${frio?'var(--red)':'var(--muted)'}">${dias===0?'Hoy':dias===1?'Ayer':dias+'d'}</span>
+            <span style="font-size:10px;font-weight:${frio?700:400};color:${frio?'var(--red)':'var(--muted)'}">${frio?'⚠️ ':''}${dias===0?'Hoy':dias===1?'Ayer':dias+'d'}</span>
           </div>
         </div>`;
       }).join('')}
     </div>`;
   }).join('');
+}
+
+let kanbanDraggedLeadId = null
+function kanbanDragStart(ev, leadId){ kanbanDraggedLeadId = leadId; ev.dataTransfer.effectAllowed = 'move' }
+async function kanbanDropLead(ev, nuevaEtapa){
+  ev.preventDefault()
+  ev.currentTarget.style.background = 'var(--surface2)'
+  const l = leads.find(x=>String(x.id)===String(kanbanDraggedLeadId))
+  if(!l || l.etapa===nuevaEtapa) return
+  const etapaAnterior = l.etapa
+  l.etapa = nuevaEtapa
+  l.ultimo_movimiento = new Date().toISOString().slice(0,10)
+  renderRepKanban()
+  try {
+    await apiPost('upsert','prospectos', l)
+    showToast(`${l.empresa} → ${nuevaEtapa}`,'✅')
+  } catch(e){
+    l.etapa = etapaAnterior
+    renderRepKanban()
+    showToast('No se pudo mover el lead','⚠️')
+  }
 }
 
 // ══════════════════════════════════════════
@@ -3868,6 +3894,11 @@ function presRenderAsesorTabla(clave){
   }
   const totPresup = rows.reduce((s,r)=>s+(parseFloat(r.presup_c26)||0),0)
   const totReal = rows.reduce((s,r)=>s+(parseFloat(r.real_c26)||0),0)
+  const totPonderado = rows.reduce((s,r)=>{
+    const real=parseFloat(r.real_c26)||0, presup=parseFloat(r.presup_c26)||0
+    const prob = (r.probabilidad===null||r.probabilidad===undefined)?100:parseFloat(r.probabilidad)
+    return s + (real>0 ? real : presup*(prob/100))
+  },0)
   tabla.innerHTML = `<div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap">
       <thead><tr style="background:#1a3a6b;color:#fff">
@@ -3877,12 +3908,16 @@ function presRenderAsesorTabla(clave){
         <th style="padding:7px 8px;text-align:right;background:rgba(29,158,117,0.35)">REAL C'26 ✎</th>
         <th style="padding:7px 8px;text-align:right;opacity:.85">PROM C'26</th>
         <th style="padding:7px 8px;text-align:center">% / PRESUP.</th>
+        <th style="padding:7px 8px;text-align:center;background:rgba(41,171,226,0.3)">PROB. %</th>
+        <th style="padding:7px 8px;text-align:right;background:rgba(41,171,226,0.2)">PONDERADO</th>
       </tr></thead>
       <tbody>
         ${rows.map((r,i)=>{
           const presup=parseFloat(r.presup_c26)||0, real=parseFloat(r.real_c26)||0, tiene=real>0
           const pctRow = presup>0 && tiene ? Math.round(real/presup*100) : null
           const col=pctRow>=100?'#1D9E75':pctRow>=75?'#854F0B':'#A32D2D'
+          const prob = (r.probabilidad===null||r.probabilidad===undefined)?100:parseFloat(r.probabilidad)
+          const ponderado = tiene ? real : presup*(prob/100)
           return `<tr style="background:${i%2===0?'#fff':'#F2F6FB'};border-bottom:0.5px solid #D6E3F0">
             <td style="padding:6px 10px;font-weight:700;border-right:1px solid #D6E3F0">${MESES_LABEL[r.mes-1]}</td>
             <td style="padding:6px 8px;text-align:right;color:#999">${fmtK(r.real_c25)}</td>
@@ -3904,6 +3939,18 @@ function presRenderAsesorTabla(clave){
                 background:${pctRow>=100?'#E1F5EE':pctRow>=75?'#FAEEDA':'#FCEBEB'};color:${col}">${pctRow}%</span>`
                 :'<span style="color:#ddd">—</span>'}
             </td>
+            <td style="padding:3px 4px;background:${tiene?'#F2F6FB':'#EAF6FD'}">
+              ${tiene ? `<div style="text-align:center;color:#1D9E75;font-weight:700;font-size:11px">100%</div>`
+              : `<div style="position:relative">
+                  <input type="number" min="0" max="100" value="${prob}"
+                    style="width:100%;text-align:center;padding:5px 6px;border:2px solid #29ABE2;
+                    border-radius:5px;font-size:12px;font-family:var(--mono);font-weight:700;
+                    color:#0F5C7A;background:#fff;cursor:text"
+                    onfocus="this.select()" onclick="this.select()"
+                    onchange="presUpdateProbabilidad('${clave}',${r.mes},this.value)">
+                </div>`}
+            </td>
+            <td style="padding:6px 8px;text-align:right;font-weight:700;color:#0F5C7A;background:rgba(41,171,226,0.08)">${fmtK(ponderado)}</td>
           </tr>`
         }).join('')}
         <tr style="background:#1a3a6b;color:#fff;font-weight:700">
@@ -3913,6 +3960,8 @@ function presRenderAsesorTabla(clave){
           <td style="padding:7px 8px;text-align:right;background:rgba(29,158,117,0.3)">${fmtK(totReal)}</td>
           <td style="padding:7px 8px;text-align:right"></td>
           <td style="padding:7px 8px;text-align:center">${totPresup>0?Math.round(totReal/totPresup*100)+'%':'—'}</td>
+          <td style="padding:7px 8px;text-align:center"></td>
+          <td style="padding:7px 8px;text-align:right;background:rgba(41,171,226,0.35)">${fmtK(totPonderado)}</td>
         </tr>
       </tbody>
     </table></div>`
@@ -3923,8 +3972,25 @@ function presRenderAsesorTabla(clave){
       <div class="kpi"><div class="kpi-n">${fmtValor(totReal)}</div><div class="kpi-l">Real acumulado 2026</div></div>
       <div class="kpi"><div class="kpi-n ${pct>=0.95?'text-green':pct>=0.75?'text-amber':'text-red'}">${Math.round(pct*100)}%</div><div class="kpi-l">Cumplimiento</div></div>
       <div class="kpi"><div class="kpi-n">${fmtValor(totPresup)}</div><div class="kpi-l">Presupuesto anual</div></div>
-      <div class="kpi"><div class="kpi-n">${rows.length}</div><div class="kpi-l">Meses con datos</div></div>`
+      <div class="kpi"><div class="kpi-n" style="color:#0F5C7A">${fmtValor(totPonderado)}</div><div class="kpi-l">Proyección ponderada</div></div>`
   }
+}
+
+async function presUpdateProbabilidad(clave, mes, valor){
+  let num = parseFloat(valor)
+  if(isNaN(num)) num = 100
+  num = Math.max(0, Math.min(100, num))
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/presupuesto_asesores?asesor_clave=eq.${encodeURIComponent(clave)}&mes=eq.${mes}`, {
+      method:'PATCH', headers:{...HDR,'Prefer':'return=minimal'},
+      body: JSON.stringify({probabilidad:num, updated_at:new Date().toISOString()})
+    })
+    if(!res.ok) throw new Error(await res.text())
+    const row = presupuesto_asesores_data.find(r=>r.asesor_clave===clave && r.mes===mes)
+    if(row) row.probabilidad = num
+    presRenderAsesorTabla(clave)
+    showToast('Probabilidad actualizada','✅')
+  } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
 
 async function presUpdateRealAsesor(clave, mes, valor){
