@@ -1505,6 +1505,7 @@ const AV_COLORS = {
 const isAdmin = () => currentUser?.name === 'Administrador';
 
 let currentUser = null;
+let sessionPin = null;
 let leads = [];
 let clientes = [];
 
@@ -1661,6 +1662,7 @@ function doLogin(){
   }
   document.getElementById('login-error').style.display = 'none';
   currentUser = {name, initials, nombre: name, rol: name==='Administrador'?'admin':'vendedor'};
+  sessionPin = entered;
   document.getElementById('header-avatar').textContent = isAdmin() ? '⚙' : initials;
   document.getElementById('header-name').textContent = name;
   document.getElementById('dash-bienvenida').textContent = `Hola, ${name} 👋`;
@@ -3698,15 +3700,30 @@ async function sbGet(table, select='*', extra=''){
   return r.json()
 }
 async function sbPost(table, data){
-  const r = await fetch(`${SB_URL}/rest/v1/${table}`, {method:'POST', headers:HDR, body:JSON.stringify(data)})
-  if(!r.ok) throw new Error(await r.text())
-  return r.json()
+  const body = await sbSecureWrite('insert', table, {}, data)
+  return [body]
 }
 async function sbPatch(table, id, data){
-  const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
-    method:'PATCH', headers:{...HDR,'Prefer':'return=minimal'}, body:JSON.stringify(data)
+  return sbSecureWrite('update', table, {id}, data)
+}
+
+// Escritura validada del lado del servidor (Supabase) — el PIN nunca autoriza nada en el navegador,
+// solo lo hace la función secure_write() que corre dentro de Postgres.
+async function sbSecureWrite(action, table, match, data){
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/secure_write`, {
+    method:'POST', headers:HDR,
+    body: JSON.stringify({
+      p_nombre: currentUser?.nombre || currentUser?.name || '',
+      p_pin: sessionPin || '',
+      p_table: table,
+      p_action: action,
+      p_match: match || {},
+      p_data: data || {}
+    })
   })
-  if(!res.ok) throw new Error(await res.text())
+  const body = await res.json().catch(()=>({}))
+  if(!res.ok) throw new Error(body.message || 'Error al guardar')
+  return body
 }
 
 // ══════════════════════════════════════════
@@ -4205,11 +4222,7 @@ async function presUpdateProbabilidad(clave, mes, valor){
   if(isNaN(num)) num = 100
   num = Math.max(0, Math.min(100, num))
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/presupuesto_asesores?asesor_clave=eq.${encodeURIComponent(clave)}&mes=eq.${mes}`, {
-      method:'PATCH', headers:{...HDR,'Prefer':'return=minimal'},
-      body: JSON.stringify({probabilidad:num, updated_at:new Date().toISOString()})
-    })
-    if(!res.ok) throw new Error(await res.text())
+    await sbSecureWrite('update', 'presupuesto_asesores', {asesor_clave:clave, mes}, {probabilidad:num, updated_at:new Date().toISOString()})
     const row = presupuesto_asesores_data.find(r=>r.asesor_clave===clave && r.mes===mes)
     if(row) row.probabilidad = num
     presRenderAsesorTabla(clave)
@@ -4220,11 +4233,7 @@ async function presUpdateProbabilidad(clave, mes, valor){
 async function presUpdateRealAsesor(clave, mes, valor){
   const num = parseFloat(valor)||0
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/presupuesto_asesores?asesor_clave=eq.${encodeURIComponent(clave)}&mes=eq.${mes}`, {
-      method:'PATCH', headers:{...HDR,'Prefer':'return=minimal'},
-      body: JSON.stringify({real_c26:num, updated_at:new Date().toISOString()})
-    })
-    if(!res.ok) throw new Error(await res.text())
+    await sbSecureWrite('update', 'presupuesto_asesores', {asesor_clave:clave, mes}, {real_c26:num, updated_at:new Date().toISOString()})
     const row = presupuesto_asesores_data.find(r=>r.asesor_clave===clave && r.mes===mes)
     if(row) row.real_c26 = num
     showToast('Actualizado','✅')
