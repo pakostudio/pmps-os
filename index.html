@@ -296,23 +296,22 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
     <div class="login-wordmark">PMPS<span style="font-size:12px;vertical-align:super">®</span></div>
     <div class="login-title">PMPS CRM · Operadora Química Menlun</div>
-    <div class="login-sub">Selecciona tu nombre e ingresa la clave del equipo</div>
+    <div class="login-sub">Selecciona tu nombre e ingresa tu contraseña</div>
     <label>Nombre</label>
     <select id="login-user">
       <option value="">— Selecciona —</option>
       <option value="Administrador:AD" style="font-weight:600">⚙️ Administrador</option>
-      <option value="José Carlos:JC">José Carlos</option>
+      <option value="José Carlos:JC" style="font-weight:600">⚙️ José Carlos</option>
       <option value="Ulises:UL">Ulises</option>
-      <option value="Rocío:RO">Rocío</option>
       <option value="Jesús:JE">Jesús</option>
       <option value="Daniel:DA">Daniel</option>
       <option value="Ma. Teresa:MT">Ma. Teresa</option>
       <option value="Arturo:AR">Arturo</option>
     </select>
-    <label>Clave de acceso</label>
-    <input type="password" id="login-pin" placeholder="••••••" autocomplete="off">
-    <div id="login-error" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none">Clave incorrecta</div>
-    <button class="btn" onclick="doLogin()">Entrar</button>
+    <label>Contraseña</label>
+    <input type="password" id="login-pin" placeholder="••••••" autocomplete="current-password">
+    <div id="login-error" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none">Nombre o contraseña incorrectos</div>
+    <button class="btn" id="login-btn" onclick="doLogin()">Entrar</button>
   </div>
 </div>
 
@@ -1572,7 +1571,19 @@ const AV_COLORS = {
   'Daniel':'#A32D2D','Ma. Teresa':'#0F6E56','Arturo':'#533AB7'
 };
 
-const isAdmin = () => currentUser?.name === 'Administrador';
+// Usuarios con cuenta real en Supabase Auth (email + contraseña, verificado en servidor).
+// Los que no aparecen aquí (Daniel, Invitado, futuros) siguen con la clave local CLAVES_LIVE
+// hasta que tengan correo — mismo login, sin romper su acceso.
+const EMAIL_MAP = {
+  'Administrador': 'pako@sportcstudio.com',
+  'Arturo':        'arturo.salazar@pmpsquimicos.com',
+  'Jesús':         'jesus.garcia@pmpsquimicos.com',
+  'José Carlos':   'josecarlos.gonzalez@pmpsquimicos.com',
+  'Ulises':        'ulises.lerma@pmpsquimicos.com',
+  'Ma. Teresa':    'teresa.olin@pmpsquimicos.com',
+};
+const ADMIN_NAMES = ['Administrador', 'José Carlos'];
+const isAdmin = () => ADMIN_NAMES.includes(currentUser?.name);
 
 let currentUser = null;
 let sessionPin = null;
@@ -1795,18 +1806,48 @@ function parseJSON(val, def){
 // ══════════════════════════════════════════
 // LOGIN
 // ══════════════════════════════════════════
-function doLogin(){
+async function doLogin(){
   const sel = document.getElementById('login-user').value;
   if(!sel){ alert('Selecciona tu nombre'); return; }
   const [name, initials] = sel.split(':');
   const entered = document.getElementById('login-pin').value;
-  const claveCorrecta = CLAVES_LIVE[name] || CLAVE_EQUIPO;
-  if(entered !== claveCorrecta){
-    document.getElementById('login-error').style.display = 'block';
-    return;
+  const btn = document.getElementById('login-btn');
+  const email = EMAIL_MAP[name];
+
+  if(email){
+    // Autenticación real: verifica email+contraseña contra Supabase Auth (servidor), no en el navegador.
+    if(btn){ btn.disabled = true; btn.textContent = 'Entrando...'; }
+    try{
+      const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: entered })
+      });
+      if(!r.ok){
+        document.getElementById('login-error').style.display = 'block';
+        if(btn){ btn.disabled = false; btn.textContent = 'Entrar'; }
+        return;
+      }
+      const auth = await r.json();
+      authAccessToken = auth.access_token;
+    }catch(e){
+      document.getElementById('login-error').style.display = 'block';
+      if(btn){ btn.disabled = false; btn.textContent = 'Entrar'; }
+      return;
+    }
+    if(btn){ btn.disabled = false; btn.textContent = 'Entrar'; }
+  } else {
+    // Usuario sin cuenta real todavía (sin correo asignado) — clave local temporal.
+    const claveCorrecta = CLAVES_LIVE[name] || CLAVE_EQUIPO;
+    if(entered !== claveCorrecta){
+      document.getElementById('login-error').style.display = 'block';
+      return;
+    }
+    authAccessToken = null;
   }
+
   document.getElementById('login-error').style.display = 'none';
-  currentUser = {name, initials, nombre: name, rol: name==='Administrador'?'admin':'vendedor'};
+  currentUser = {name, initials, nombre: name, rol: ADMIN_NAMES.includes(name) ? 'admin' : 'vendedor'};
   sessionPin = entered;
   document.getElementById('header-avatar').textContent = isAdmin() ? '⚙' : initials;
   document.getElementById('header-name').textContent = name;
@@ -1844,6 +1885,8 @@ document.getElementById('login-pin').addEventListener('keydown', e=>{ if(e.key==
 function doLogout(){
   if(!confirm('¿Cerrar sesión?')) return;
   currentUser = null;
+  authAccessToken = null;
+  sessionPin = null;
   leads = []; clientes = [];
   document.getElementById('login-pin').value = '';
   document.getElementById('login-user').value = '';
@@ -3889,10 +3932,13 @@ async function abrirReasignarCliente(id){
 // ── CONSTANTES MÓDULOS NUEVOS ─────────────────────────────────
 const SB_URL = 'https://invwksntpqxsmkqycybf.supabase.co'
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imludndrc250cHF4c21rcXljeWJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA1MTAsImV4cCI6MjA5NTQ4NjUxMH0.DYYGW7Uwxhg_i2D6tyKOnP4SOO89_clx8T-_ZqXnLuA'
-const HDR = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }
+let authAccessToken = null; // JWT real de Supabase Auth tras login con email+contraseña (autenticación real)
+function getHdr(){
+  return { 'apikey': SB_KEY, 'Authorization': `Bearer ${authAccessToken || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }
+}
 
 async function sbGet(table, select='*', extra=''){
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?select=${select}${extra}`, {headers:HDR})
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?select=${select}${extra}`, {headers:getHdr()})
   if(!r.ok) throw new Error(await r.text())
   return r.json()
 }
@@ -3908,7 +3954,7 @@ async function sbPatch(table, id, data){
 // solo lo hace la función secure_write() que corre dentro de Postgres.
 async function sbSecureWrite(action, table, match, data){
   const res = await fetch(`${SB_URL}/rest/v1/rpc/secure_write`, {
-    method:'POST', headers:HDR,
+    method:'POST', headers:getHdr(),
     body: JSON.stringify({
       p_nombre: currentUser?.nombre || currentUser?.name || '',
       p_pin: sessionPin || '',
