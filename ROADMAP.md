@@ -70,4 +70,34 @@ Decisión de Pako: considerar PMPS OS v2 como plantilla base para clientes con r
   - Cada cliente futuro necesita su propia key de Resend/dominio de correo (o operarlo Pako en su nombre, a definir).
 - **Estimado de costo de mercado si se mandara hacer de cero** (referencia, no cotización formal): freelancer senior en México ~$350,000-700,000 MXN (4-6 meses); agencia de software ~$25,000-60,000 USD; freelancer remoto económico ~$10,000-18,000 USD. La ventaja real de este desarrollo fue la velocidad (días, no meses) gracias al trabajo asistido por IA.
 
+## 🚨 Migración de emergencia a nuevo proyecto Supabase (2026-07-13)
+
+**Qué pasó**: el proyecto original de Supabase (`invwksntpqxsmkqycybf`) se volvió inaccesible — mi conector perdió todo permiso sobre él (hasta un `select 1` fallaba) y el proyecto ya no aparece en la lista de proyectos disponibles. No hay evidencia de que un tercero (mencionaste "Codex") haya entrado y borrado algo; lo único confirmado es que el acceso se cortó del lado del conector. Pako decidió no investigar más y migrar de cero al proyecto nuevo `diqbmyqvuyollvlvjniz` ("PAKO").
+
+**Hallazgo crítico antes de migrar**: el proyecto nuevo NO estaba vacío — ya tenía un sistema completo en producción de **SM Soluciones** (otro negocio de Pako): tablas `usuarios`, `clientes`, `proyectos`, `tareas` (57 filas), `comentarios` (511 filas), `inventory_devices`/`inventory_movements` (200 filas cada una), etc. Para no chocar ni un byte con ese sistema, **todas las tablas de PMPS se crearon con el prefijo `pmps_`** dentro del mismo proyecto (`pmps_usuarios`, `pmps_clientes`, `pmps_leads_menlun`, `pmps_notificaciones`, `pmps_activity_log`, `pmps_workflow_reglas`, `pmps_forecast_2026`, `pmps_presupuesto_2026`, `pmps_presupuesto_asesores`, `pmps_productos`, `pmps_equipos_comodato`, `pmps_ventas_historicas`, `pmps_reportes`). SM Soluciones no fue tocado en absoluto.
+
+**Qué se reconstruyó**:
+- Las 13 tablas de PMPS, con columnas reconstruidas a partir del código real de `index.html` (no adivinadas al azar) — se revisó cada módulo para que las columnas coincidan exactamente con lo que el frontend espera.
+- RLS activado en las 13 tablas (lectura abierta, escritura solo vía `secure_write()`).
+- Funciones `secure_write()` y `crear_notificacion()` recreadas con la misma lógica de antes (validación de PIN del lado del servidor, dedup de notificaciones).
+- Los 6 usuarios reconstruidos en `pmps_usuarios` (Administrador, Arturo, Jesús, José Carlos, Ulises, Ma. Teresa) y sus 6 cuentas reales de Supabase Auth recreadas con contraseñas temporales nuevas (ver abajo).
+- Edge Functions `send-email` y `run-automatizaciones` redesplegadas en el proyecto nuevo, con la misma lógica de CC a José Carlos **pausada** (igual que antes de la migración) y el cron **sin programar todavía** (no se reactivó automáticamente).
+- `index.html` actualizado con la URL y key del proyecto nuevo, y todas las referencias de tabla renombradas a `pmps_*`. Subido a GitHub → Vercel lo redespliega solo.
+
+**⚠️ Lo que se perdió y no se pudo recuperar**: todos los datos reales que vivían en las tablas del proyecto viejo (leads/clientes cargados, historial de ventas, forecast, presupuesto capturado, catálogo de productos, equipos en comodato, reportes FO-VE-01). Las tablas nuevas tienen la **estructura correcta pero están vacías**. Los módulos de Leads y Clientes del CRM principal (Kanban) siguen funcionando normal porque esos viven en el Google Apps Script externo, no en Supabase — esos datos NO se perdieron.
+
+**Contraseñas temporales nuevas (avisar a cada quien, cambiarlas apenas entren)**:
+- Administrador (pako@sportcstudio.com): `Pmps2026!`
+- Arturo: `Pmps2026Art!`
+- Jesús: `Pmps2026Jes!`
+- José Carlos: `Pmps2026JC!`
+- Ulises: `Pmps2026Uli!`
+- Ma. Teresa: `Pmps2026Ter!`
+
+**Pendiente para revisar mañana con calma**:
+1. Entrar y probar cada módulo (Forecast, Presupuesto, Catálogo, Equipos, Ventas Históricas, Reportes, Directorio) — si algo tira error de "columna no existe", avisar de inmediato para corregir el esquema (es rápido).
+2. Recargar los datos reales si tienes los Excel originales o algún respaldo — sin eso, las tablas siguen vacías.
+3. Decidir cuándo reactivar el cron de `run-automatizaciones` y el CC a José Carlos (ambos quedaron igual de pausados que antes de la migración).
+4. Auditoría completa pendiente (#32) — hacerla ya en el proyecto nuevo, no en el viejo (que ya no existe para nosotros).
+
 (Marca cada uno aquí conforme se vaya cerrando, o pídeme que lo actualice.)
