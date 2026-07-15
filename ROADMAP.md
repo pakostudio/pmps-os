@@ -101,3 +101,30 @@ Decisión de Pako: considerar PMPS OS v2 como plantilla base para clientes con r
 4. Auditoría completa pendiente (#32) — hacerla ya en el proyecto nuevo, no en el viejo (que ya no existe para nosotros).
 
 (Marca cada uno aquí conforme se vaya cerrando, o pídeme que lo actualice.)
+
+## ✅ Recuperación de datos reales post-migración (2026-07-14/15)
+
+Tras la migración de emergencia, se recargaron los datos reales desde los 4 Excel que Pako ya tenía disponibles, más un fix crítico de login. Esto se hizo mientras Pako dormía, con autorización explícita ("dale en loop hasta terminar todo... tienes mi autorización para entrar a todo").
+
+**Fix de login (crítico)**: después del reseteo de contraseñas, el login fallaba con error 500 genérico para los 6 usuarios. Causa raíz: al recrear las cuentas en `auth.users` vía SQL manual, columnas como `email_change` quedaron en `NULL` en vez de cadena vacía `''` — un bug conocido de GoTrue (Supabase Auth) que rompe el login de forma silenciosa. Se corrigió con un `UPDATE` que llena esas columnas con `''`. Contraseña de Pako reseteada de nuevo a `Pmps2026Nueva!` y verificada con una prueba directa contra el endpoint de auth (login exitoso confirmado).
+
+**Nota sobre el susto del "sí veo datos"**: lo que se vio en una captura de pantalla (Presupuesto con columnas históricas C'17-C'25 llenas) nunca estuvo en riesgo — esas columnas son constantes fijas dentro del código de `index.html`, no vienen de la base de datos. Los valores de C'26 que parecían llenos eran memoria vieja de la pestaña del navegador (abierta desde antes de la migración) — se confirmó consultando la base directamente (todo en cero) y se resolvió con un refresh forzado (Cmd+Shift+R).
+
+**Datos recargados desde los Excel originales**:
+
+| Módulo | Tabla | Fuente (archivo / hoja) | Filas cargadas |
+|---|---|---|---|
+| Presupuesto general 2026 | `pmps_presupuesto_2026` | PRESUPUESTO PMPS® 2026.xlsx / "P 2026 (NUEVO)" | 12 (meses) |
+| Presupuesto por asesor | `pmps_presupuesto_asesores` | PRESUPUESTO PMPS® 2026.xlsx / hojas Corpo, Arturo, Teresa, Jesus, Asesor LD, PACIFICO, DISTRIBUIDOR | 84 (7 asesores × 12 meses) |
+| Forecast 2026 | `pmps_forecast_2026` | FORECAST_OPERADORA_2026.xlsx / hojas CORP, ASA, JGT, MTOS, ALYD, PACIFICO | 259 (por producto/asesor) |
+| Catálogo de productos | `pmps_productos` | FORECAST_OPERADORA_2026.xlsx / hoja "ARTÍCULOS" | 320 |
+| Ventas Históricas | `pmps_ventas_historicas` | VENTAS PMPS.xlsx / hojas 2020 a 2026 | 622 (7 años) |
+| Directorio (Menlun) | `pmps_leads_menlun` | Matriz_Clientes-Precio-Producto.xlsx / hojas "2025 CLIENTES" y "2026 CLIENTES" | 122 clientes (con vendedor asignado; 82 con sector/estado cruzado desde Ventas Históricas 2026) |
+
+**Lo que sigue vacío (sin fuente disponible)**:
+- `pmps_equipos_comodato` (Equipos en comodato) — ningún Excel de los subidos contiene esta información. Si Pako tiene un registro de equipos en campo (aunque sea en papel o en otro archivo), avisar para cargarlo.
+- `pmps_reportes` (Reportes FO-VE-01) — son reportes de servicio que se generan hacia adelante desde la app, no hay histórico que recuperar de Excel.
+- El Directorio quedó con datos básicos (nombre, asesor, sector/estado cuando fue posible cruzarlo); campos como razón social, giro, tier, municipio exacto, teléfono, email y notas no estaban en la Matriz de Clientes-Precio-Producto (esa hoja es una matriz de precios por cliente/producto, no un directorio completo) — si existe un directorio más detallado en otro archivo, se puede enriquecer después.
+- El `index.html` subido como "CRM v1" (archivo aparte que Pako compartió) se revisó y confirmó que es una versión anterior del mismo código de la app, sin datos nuevos que recuperar — usa el mismo Google Apps Script para Leads/Clientes (que nunca se perdió) y su propia conexión a Supabase apunta al proyecto viejo ya inaccesible.
+
+**Resultado**: PMPS OS v2 en el proyecto nuevo (`diqbmyqvuyollvlvjniz`) ya tiene datos reales operativos en Presupuesto, Forecast, Catálogo, Ventas Históricas y Directorio. Pendiente para cuando Pako despierte: revisar visualmente cada módulo, confirmar que los números cuadran con lo que recuerda, y decidir sobre Equipos (única tabla sin fuente de datos).
