@@ -675,13 +675,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
           <select id="actividad-filter-tabla" onchange="renderActividad()" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;background:var(--bg);margin:0">
             <option value="">Todos los módulos</option>
-            <option value="forecast_2026">Forecast</option>
-            <option value="presupuesto_2026">Presupuesto (general)</option>
-            <option value="presupuesto_asesores">Presupuesto (asesores)</option>
-            <option value="productos">Catálogo</option>
-            <option value="equipos_comodato">Equipos en comodato</option>
-            <option value="ventas_historicas">Ventas Históricas</option>
-            <option value="reportes">Reportes FO-VE-01</option>
+            <option value="pmps_forecast_2026">Forecast</option>
+            <option value="pmps_presupuesto_2026">Presupuesto (general)</option>
+            <option value="pmps_presupuesto_asesores">Presupuesto (asesores)</option>
+            <option value="pmps_productos">Catálogo</option>
+            <option value="pmps_equipos_comodato">Equipos en comodato</option>
+            <option value="pmps_ventas_historicas">Ventas Históricas</option>
+            <option value="pmps_reportes">Reportes FO-VE-01</option>
           </select>
           <button class="btn-export-xls" onclick="renderActividad()" style="margin:0">🔄 Actualizar</button>
         </div>
@@ -3238,20 +3238,20 @@ async function wfCrearRegla(){
   const accion_mensaje = document.getElementById('wf-mensaje').value.trim();
   if(!nombre || !valor || !accion_mensaje){ showToast('Completa nombre, valor y mensaje','⚠️'); return; }
   try{
-    await sbPost('workflow_reglas', {nombre, tabla, campo, operador, valor, accion_mensaje, activa:true, creado_por: currentUser.nombre});
+    await sbPost('pmps_workflow_reglas', {nombre, tabla, campo, operador, valor, accion_mensaje, activa:true, creado_por: currentUser.nombre});
     ['wf-nombre','wf-valor','wf-mensaje'].forEach(id=>document.getElementById(id).value='');
     showToast('Regla creada ✓');
     renderWorkflow();
   }catch(e){ showToast('Error al crear regla: '+e.message,'⚠️'); }
 }
 async function wfToggleRegla(id, activa){
-  try{ await sbPatch('workflow_reglas', id, {activa: !activa}); renderWorkflow(); }
+  try{ await sbPatch('pmps_workflow_reglas', id, {activa: !activa}); renderWorkflow(); }
   catch(e){ showToast('Error al actualizar: '+e.message,'⚠️'); }
 }
 async function wfEliminarRegla(id){
   if(!confirm('¿Eliminar esta regla?')) return;
   try{
-    await sbSecureWrite('delete','workflow_reglas',{id},{});
+    await sbSecureWrite('delete','pmps_workflow_reglas',{id},{});
     showToast('Regla eliminada');
     renderWorkflow();
   }catch(e){ showToast('Error al eliminar: '+e.message,'⚠️'); }
@@ -3290,7 +3290,7 @@ async function renderWorkflow(){
   const wrap = document.getElementById('workflow-list');
   if(!wrap) return;
   wrap.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0">Cargando reglas...</div>';
-  try{ workflowReglas = await sbGet('workflow_reglas','*','&order=creado_en.desc'); }catch(e){ workflowReglas = []; }
+  try{ workflowReglas = await sbGet('pmps_workflow_reglas','*','&order=creado_en.desc'); }catch(e){ workflowReglas = []; }
   if(!workflowReglas.length){
     wrap.innerHTML = '<div class="empty-state">Aún no has creado reglas personalizadas. Usa el formulario de arriba.</div>';
     return;
@@ -3345,9 +3345,9 @@ async function syncWorkflowNotificaciones(){
 
 // ── ACTIVIDAD (historial de cambios / auditoría) ──
 const ACTIVIDAD_LABELS = {
-  forecast_2026:'Forecast', presupuesto_2026:'Presupuesto (general)', presupuesto_asesores:'Presupuesto (asesores)',
-  productos:'Catálogo', equipos_comodato:'Equipos en comodato', ventas_historicas:'Ventas Históricas',
-  reportes:'Reportes FO-VE-01', leads_menlun:'Directorio'
+  pmps_forecast_2026:'Forecast', pmps_presupuesto_2026:'Presupuesto (general)', pmps_presupuesto_asesores:'Presupuesto (asesores)',
+  pmps_productos:'Catálogo', pmps_equipos_comodato:'Equipos en comodato', pmps_ventas_historicas:'Ventas Históricas',
+  pmps_reportes:'Reportes FO-VE-01', pmps_leads_menlun:'Directorio'
 };
 function actividadResumenCampos(campos){
   if(!campos) return '';
@@ -3363,7 +3363,7 @@ async function renderActividad(){
   const filtro = document.getElementById('actividad-filter-tabla')?.value || '';
   let extra = '&order=creado_en.desc&limit=100';
   if(filtro) extra += `&tabla=eq.${filtro}`;
-  const rows = await sbGet('activity_log','*',extra).catch(()=>[]);
+  const rows = await sbGet('pmps_activity_log','*',extra).catch(()=>[]);
   if(!rows.length){ el.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
   el.innerHTML = rows.map(r=>{
@@ -3480,7 +3480,7 @@ let USUARIOS_EMAIL_MAP = null;
 async function getUsuariosEmailMap(){
   if(USUARIOS_EMAIL_MAP) return USUARIOS_EMAIL_MAP;
   try{
-    const rows = await sbGet('usuarios','nombre,email','');
+    const rows = await sbGet('pmps_usuarios','nombre,email','');
     USUARIOS_EMAIL_MAP = {};
     rows.forEach(r=>{ if(r.email) USUARIOS_EMAIL_MAP[r.nombre] = r.email; });
   }catch(e){ USUARIOS_EMAIL_MAP = {}; }
@@ -3544,7 +3544,7 @@ async function renderNotifCampana(){
   const bell = document.getElementById('notif-bell')
   if(!bell || !currentUser) return
   try{
-    const rows = await sbGet('notificaciones','*',`&usuario_nombre=eq.${encodeURIComponent(currentUser.nombre)}&order=creado_en.desc&limit=30`)
+    const rows = await sbGet('pmps_notificaciones','*',`&usuario_nombre=eq.${encodeURIComponent(currentUser.nombre)}&order=creado_en.desc&limit=30`)
     const noLeidas = rows.filter(r=>!r.leido)
     const badge = document.getElementById('notif-badge')
     if(badge){ badge.style.display = noLeidas.length ? 'flex' : 'none'; badge.textContent = noLeidas.length>9?'9+':noLeidas.length }
@@ -4269,8 +4269,8 @@ async function abrirReasignarCliente(id){
 
 
 // ── CONSTANTES MÓDULOS NUEVOS ─────────────────────────────────
-const SB_URL = 'https://invwksntpqxsmkqycybf.supabase.co'
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imludndrc250cHF4c21rcXljeWJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA1MTAsImV4cCI6MjA5NTQ4NjUxMH0.DYYGW7Uwxhg_i2D6tyKOnP4SOO89_clx8T-_ZqXnLuA'
+const SB_URL = 'https://diqbmyqvuyollvlvjniz.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpcWJteXF2dXlvbGx2bHZqbml6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwODA5MjEsImV4cCI6MjA5OTY1NjkyMX0.VAL6-eUHRZyZhmf3clD8ht3sa9pCoyBMIzZSCg16cBs'
 let authAccessToken = null; // JWT real de Supabase Auth tras login con email+contraseña (autenticación real)
 function getHdr(){
   return { 'apikey': SB_KEY, 'Authorization': `Bearer ${authAccessToken || SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }
@@ -4431,7 +4431,7 @@ async function loadForecast(){
   if(forecast_data.length) { fcRenderGlobal(); return }
   try {
     setLoading(true,'Cargando forecast...')
-    forecast_data = await sbGet('forecast_2026','*','&order=asesor_clave.asc,producto.asc')
+    forecast_data = await sbGet('pmps_forecast_2026','*','&order=asesor_clave.asc,producto.asc')
     fcRenderKpis()
     fcRenderGlobal()
     fcRenderAsesor('CORP','fc-tabla-corp')
@@ -4676,8 +4676,8 @@ function fcRenderTablaAsesor(clave, items, canEdit, container){
 
 async function loadPresupuesto(){
   try {
-    presupuesto_data = await sbGet('presupuesto_2026','*','&order=mes.asc')
-    presupuesto_asesores_data = await sbGet('presupuesto_asesores','*','&order=asesor_clave.asc,mes.asc')
+    presupuesto_data = await sbGet('pmps_presupuesto_2026','*','&order=mes.asc')
+    presupuesto_asesores_data = await sbGet('pmps_presupuesto_asesores','*','&order=asesor_clave.asc,mes.asc')
     presRenderSubtabs()
     presSwitchSubtab('general')
   } catch(e){ showToast('Error cargando presupuesto','⚠️') }
@@ -4804,7 +4804,7 @@ async function presUpdateProbabilidad(clave, mes, valor){
   if(isNaN(num)) num = 100
   num = Math.max(0, Math.min(100, num))
   try {
-    await sbSecureWrite('update', 'presupuesto_asesores', {asesor_clave:clave, mes}, {probabilidad:num, updated_at:new Date().toISOString()})
+    await sbSecureWrite('update', 'pmps_presupuesto_asesores', {asesor_clave:clave, mes}, {probabilidad:num, updated_at:new Date().toISOString()})
     const row = presupuesto_asesores_data.find(r=>r.asesor_clave===clave && r.mes===mes)
     if(row) row.probabilidad = num
     presRenderAsesorTabla(clave)
@@ -4815,7 +4815,7 @@ async function presUpdateProbabilidad(clave, mes, valor){
 async function presUpdateRealAsesor(clave, mes, valor){
   const num = parseFloat(valor)||0
   try {
-    await sbSecureWrite('update', 'presupuesto_asesores', {asesor_clave:clave, mes}, {real_c26:num, updated_at:new Date().toISOString()})
+    await sbSecureWrite('update', 'pmps_presupuesto_asesores', {asesor_clave:clave, mes}, {real_c26:num, updated_at:new Date().toISOString()})
     const row = presupuesto_asesores_data.find(r=>r.asesor_clave===clave && r.mes===mes)
     if(row) row.real_c26 = num
     showToast('Actualizado','✅')
@@ -5119,7 +5119,7 @@ const CAT_COLORS = {
 async function loadCatalogo(){
   if(productos_cat.length){ renderCatPills(); catFilter(); return }
   try {
-    productos_cat = await sbGet('productos','*','&order=nombre.asc')
+    productos_cat = await sbGet('pmps_productos','*','&order=nombre.asc')
     renderCatPills(); catFilter()
   } catch(e){ showToast('Error cargando catálogo','⚠️') }
 }
@@ -5240,7 +5240,7 @@ async function catSaveEdit(){
   const descripcion = document.getElementById('cat-edit-descripcion').value.trim()
   if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
   try {
-    await sbPatch('productos', catEditingId, {nombre, familia, uso_dosificacion, descripcion})
+    await sbPatch('pmps_productos', catEditingId, {nombre, familia, uso_dosificacion, descripcion})
     const idx = productos_cat.findIndex(x=>x.id===catEditingId)
     if(idx>=0) Object.assign(productos_cat[idx], {nombre, familia, uso_dosificacion, descripcion})
     document.getElementById('modal-cat-edit').style.display = 'none'
@@ -5275,7 +5275,7 @@ function verProducto(id){
 async function loadEquipos(){
   if(equipos_data.length){ eqFilter(); return }
   try {
-    equipos_data = await sbGet('equipos_comodato','*','&order=nombre.asc')
+    equipos_data = await sbGet('pmps_equipos_comodato','*','&order=nombre.asc')
     eqFilter()
   } catch(e){ showToast('Error cargando equipos','⚠️') }
 }
@@ -5346,7 +5346,7 @@ async function eqSaveEdit(){
     }
     const ubicacion = document.getElementById('eq-edit-ubicacion').value.trim()
     const notas = document.getElementById('eq-edit-notas').value.trim()
-    await sbPatch('equipos_comodato', eqEditingId, { ubicacion, notas, imagen_url })
+    await sbPatch('pmps_equipos_comodato', eqEditingId, { ubicacion, notas, imagen_url })
     const idx = equipos_data.findIndex(x=>String(x.id)===String(eqEditingId))
     if(idx>=0) equipos_data[idx] = { ...equipos_data[idx], ubicacion, notas, imagen_url }
     document.getElementById('modal-eq-edit').style.display='none'
@@ -5361,7 +5361,7 @@ async function eqSaveEdit(){
 async function loadVentas(){
   if(ventas_data.length){ renderVhKpis(); vhFilter(); return }
   try {
-    ventas_data = await sbGet('ventas_historicas','*','&order=anio.desc,total.desc')
+    ventas_data = await sbGet('pmps_ventas_historicas','*','&order=anio.desc,total.desc')
     renderVhKpis(); vhFilter()
   } catch(e){ showToast('Error cargando ventas','⚠️') }
 }
@@ -5462,7 +5462,7 @@ async function vhSaveEdit(){
   const total = parseFloat(document.getElementById('vh-edit-total').value)||0
   if(!cliente){ showToast('El cliente es requerido','⚠️'); return }
   try {
-    await sbPatch('ventas_historicas', vhEditingId, {cliente, asesor_nombre, anio, sector, total})
+    await sbPatch('pmps_ventas_historicas', vhEditingId, {cliente, asesor_nombre, anio, sector, total})
     const idx = ventas_data.findIndex(x=>String(x.id)===String(vhEditingId))
     if(idx>=0) Object.assign(ventas_data[idx], {cliente, asesor_nombre, anio, sector, total})
     document.getElementById('modal-vh-edit').style.display = 'none'
@@ -5478,7 +5478,7 @@ let repTipoActual = 'equipos'
 
 async function loadReportes(){
   try {
-    reportes_data = await sbGet('reportes','*','&order=created_at.desc')
+    reportes_data = await sbGet('pmps_reportes','*','&order=created_at.desc')
     const selCli = document.getElementById('rep-filtro-cli')
     if(selCli){
       const cliOpts = [...new Set(reportes_data.map(r=>r.cliente).filter(Boolean))].sort()
@@ -5487,7 +5487,7 @@ async function loadReportes(){
     // Poblar cliente en form
     const rfCli = document.getElementById('rf-cliente')
     if(rfCli){
-      const clisData = await sbGet('clientes','empresa','&order=empresa.asc').catch(()=>[])
+      const clisData = await sbGet('pmps_clientes','empresa','&order=empresa.asc').catch(()=>[])
       rfCli.innerHTML = '<option value="">— Selecciona —</option>'+clisData.map(c=>`<option>${c.empresa}</option>`).join('')
     }
     // Tab todos solo admin
@@ -5549,7 +5549,7 @@ async function guardarReporte(){
     asesor_nombre: currentUser.nombre,
   }
   try {
-    const res = await sbPost('reportes', data)
+    const res = await sbPost('pmps_reportes', data)
     if(res&&res[0]) reportes_data.unshift(res[0])
     showToast('Reporte '+folio+' guardado ✓')
     repFilter()
@@ -5580,7 +5580,7 @@ async function dirFetchAll(){
   let all = [], from = 0
   const batchSize = 1000
   while(true){
-    const batch = await sbGet('leads_menlun', DIR_COLS, `&order=id.asc&offset=${from}&limit=${batchSize}`)
+    const batch = await sbGet('pmps_leads_menlun', DIR_COLS, `&order=id.asc&offset=${from}&limit=${batchSize}`)
     if(!batch || !batch.length) break
     all = all.concat(batch)
     from += batchSize
@@ -5809,7 +5809,7 @@ async function dirSaveModal(){
   const vendedor = document.getElementById('dir-modal-vendedor').value
   const notas = document.getElementById('dir-modal-notas').value
   try {
-    await sbPatch('leads_menlun', dirEditingId, {estatus, vendedor_asignado: vendedor, notas})
+    await sbPatch('pmps_leads_menlun', dirEditingId, {estatus, vendedor_asignado: vendedor, notas})
     const idx = dirAllData.findIndex(x=>x.id===dirEditingId)
     if(idx>=0){ dirAllData[idx].estatus=estatus; dirAllData[idx].vendedor_asignado=vendedor; dirAllData[idx].notas=notas }
     document.getElementById('modal-dir').style.display = 'none'
