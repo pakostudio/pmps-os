@@ -299,14 +299,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div class="login-sub">Selecciona tu nombre e ingresa tu contraseña</div>
     <label>Nombre</label>
     <select id="login-user">
-      <option value="">— Selecciona —</option>
-      <option value="Administrador:AD" style="font-weight:600">⚙️ Administrador</option>
-      <option value="José Carlos:JC" style="font-weight:600">⚙️ José Carlos</option>
-      <option value="Ulises:UL">Ulises</option>
-      <option value="Jesús:JE">Jesús</option>
-      <option value="Daniel:DA">Daniel</option>
-      <option value="Ma. Teresa:MT">Ma. Teresa</option>
-      <option value="Arturo:AR">Arturo</option>
+      <option value="">Cargando usuarios…</option>
     </select>
     <label>Contraseña</label>
     <input type="password" id="login-pin" placeholder="••••••" autocomplete="current-password">
@@ -815,6 +808,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
               <div><label>Iniciales (2 letras)</label><input type="text" id="nu-iniciales" placeholder="CL" maxlength="2"></div>
             </div>
             <div class="g2">
+              <div><label>Correo (opcional — si lo pones, tendrá cuenta real con acceso desde cualquier dispositivo)</label><input type="email" id="nu-correo" placeholder="nombre@pmpsquimicos.com"></div>
+              <div><label>Rol</label><select id="nu-rol"><option value="vendedor">Vendedor</option><option value="admin">Administrador</option></select></div>
+            </div>
+            <div class="g2">
               <div><label>Clave de acceso</label><input type="password" id="nu-clave" placeholder="Clave del nuevo usuario"></div>
               <div style="display:flex;align-items:flex-end"><button class="btn btn-sm" onclick="addUsuario()" style="margin-bottom:12px;width:100%">Agregar usuario</button></div>
             </div>
@@ -828,12 +825,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="section-title">🔑 Cambiar clave de acceso</div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Cambia la clave individual de cada usuario.</div>
           <div id="admin-claves-list"></div>
-          <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;font-size:12px;color:var(--muted)">
-            <b>Clave compartida del equipo:</b> <code style="background:var(--surface2);padding:2px 8px;border-radius:4px" id="clave-actual-display">—</code>
-            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-              <input type="password" id="nueva-clave-equipo" placeholder="Nueva clave para todos" style="margin:0;flex:1">
-              <button class="btn btn-sm" onclick="cambiarClaveEquipo()">Cambiar clave del equipo</button>
-            </div>
+          <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;font-size:11px;color:var(--muted)">
+            Los usuarios con correo (⚙️ marcados como cuenta real) cambian su clave contra Supabase Auth. Los usuarios sin correo usan una clave local propia por persona.
           </div>
         </div>
       </div>
@@ -1591,46 +1584,39 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 // CONFIG
 // ══════════════════════════════════════════
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxACqAOQ4qjHH3UBaT6ekGN4iJ9TTl6cYSomXYLz-rLYMi1VtSS-s2qWuBSUK1I9Hsc/exec';
-let CLAVE_EQUIPO = 'menlun2026'; // Clave compartida — admin puede cambiarla
 
-// Claves individuales por usuario (admin puede cambiarlas)
-let CLAVES_LIVE = {
-  'Administrador': '1234',  // PIN exclusivo del admin
-  'José Carlos':   'menlun2026',
-  'Ulises':        'menlun2026',
-  'Rocío':         'menlun2026',
-  'Jesús':         'menlun2026',
-  'Daniel':        'menlun2026',
-  'Ma. Teresa':    'menlun2026',
-  'Arturo':        'menlun2026',
-};
+// ── USUARIOS: fuente única de verdad = tabla pmps_usuarios en Supabase ──────
+// Nada de listas hardcodeadas: se cargan al boot (initUsuarios) y toda alta/baja/
+// cambio de clave se escribe en la base real (secure_write / RPCs / admin-usuarios).
+let USERS_LIVE = {};      // { nombre: {initials, email, rol} } — sin "Administrador"
+let EMAIL_MAP = {};       // { nombre: email } — solo quienes tienen cuenta real de Supabase Auth
+let AV_COLORS = { 'Administrador':'#0D1F3C' };
+const ADMIN_EMAIL_FALLBACK = 'pako@sportcstudio.com'; // el admin siempre existe, aunque falle la carga
+let usuariosBootPromise = null;
 
-let USERS_LIVE = {
-  'José Carlos':{initials:'JC'},'Ulises':{initials:'UL'},'Rocío':{initials:'RO'},
-  'Jesús':{initials:'JE'},'Daniel':{initials:'DA'},'Ma. Teresa':{initials:'MT'},
-  'Arturo':{initials:'AR'}
-};
-// USERS_LIVE es la fuente única de verdad para usuarios del sistema
+function colorParaNombre(nombre){
+  let h = 0; for(let i=0;i<nombre.length;i++) h = (h*31 + nombre.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  return `hsl(${hue}, 45%, 32%)`;
+}
 
-const AV_COLORS = {
-  'Administrador':'#0D1F3C',
-  'José Carlos':'#1B2A4A','Ulises':'#185FA5','Rocío':'#00AEEF','Jesús':'#854F0B',
-  'Daniel':'#A32D2D','Ma. Teresa':'#0F6E56','Arturo':'#533AB7'
-};
-
-// Usuarios con cuenta real en Supabase Auth (email + contraseña, verificado en servidor).
-// Los que no aparecen aquí (Daniel, Invitado, futuros) siguen con la clave local CLAVES_LIVE
-// hasta que tengan correo — mismo login, sin romper su acceso.
-const EMAIL_MAP = {
-  'Administrador': 'pako@sportcstudio.com',
-  'Arturo':        'arturo.salazar@pmpsquimicos.com',
-  'Jesús':         'jesus.garcia@pmpsquimicos.com',
-  'José Carlos':   'josecarlos.gonzalez@pmpsquimicos.com',
-  'Ulises':        'ulises.lerma@pmpsquimicos.com',
-  'Ma. Teresa':    'teresa.olin@pmpsquimicos.com',
-};
-const ADMIN_NAMES = ['Administrador', 'José Carlos'];
-const isAdmin = () => ADMIN_NAMES.includes(currentUser?.name);
+async function initUsuarios(){
+  try {
+    const rows = await sbGet('pmps_usuarios', 'nombre,email,rol,iniciales', '&activo=is.true&order=nombre.asc')
+    USERS_LIVE = {}; EMAIL_MAP = {}
+    rows.forEach(u=>{
+      if(u.nombre==='Administrador'){ EMAIL_MAP['Administrador'] = u.email || ADMIN_EMAIL_FALLBACK; return }
+      USERS_LIVE[u.nombre] = { initials: u.iniciales || u.nombre.slice(0,2).toUpperCase(), email: u.email||null, rol: u.rol||'vendedor' }
+      if(u.email) EMAIL_MAP[u.nombre] = u.email
+      AV_COLORS[u.nombre] = colorParaNombre(u.nombre)
+    })
+    if(!EMAIL_MAP['Administrador']) EMAIL_MAP['Administrador'] = ADMIN_EMAIL_FALLBACK
+  } catch(e){
+    console.error('No se pudo cargar usuarios', e)
+  }
+  rebuildLoginSelect()
+}
+const isAdmin = () => currentUser?.rol === 'admin';
 
 let currentUser = null;
 let sessionPin = null;
@@ -1928,9 +1914,19 @@ async function doLogin(){
     }
     if(btn){ btn.disabled = false; btn.textContent = 'Entrar'; }
   } else {
-    // Usuario sin cuenta real todavía (sin correo asignado) — clave local temporal.
-    const claveCorrecta = CLAVES_LIVE[name] || CLAVE_EQUIPO;
-    if(entered !== claveCorrecta){
+    // Usuario sin cuenta real todavía (sin correo asignado) — clave local verificada
+    // del lado del servidor (nunca se compara en el navegador ni se expone el hash).
+    if(btn){ btn.disabled = true; btn.textContent = 'Entrando...'; }
+    let claveOk = false;
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/rpc/usuario_verificar_clave_local`, {
+        method:'POST', headers:{apikey:SB_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({p_nombre: name, p_clave: entered})
+      });
+      claveOk = r.ok && (await r.json()) === true;
+    } catch(e){ claveOk = false; }
+    if(btn){ btn.disabled = false; btn.textContent = 'Entrar'; }
+    if(!claveOk){
       document.getElementById('login-error').style.display = 'block';
       return;
     }
@@ -1938,7 +1934,8 @@ async function doLogin(){
   }
 
   document.getElementById('login-error').style.display = 'none';
-  currentUser = {name, initials, nombre: name, rol: ADMIN_NAMES.includes(name) ? 'admin' : 'vendedor'};
+  const rolUsuario = name==='Administrador' ? 'admin' : (USERS_LIVE[name]?.rol || 'vendedor');
+  currentUser = {name, initials, nombre: name, rol: rolUsuario};
   sessionPin = entered;
   document.getElementById('header-avatar').textContent = isAdmin() ? '⚙' : initials;
   document.getElementById('header-name').textContent = name;
@@ -3290,7 +3287,7 @@ async function renderWorkflow(){
   const wrap = document.getElementById('workflow-list');
   if(!wrap) return;
   wrap.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0">Cargando reglas...</div>';
-  try{ workflowReglas = await sbGet('pmps_workflow_reglas','*','&order=creado_en.desc'); }catch(e){ workflowReglas = []; }
+  try{ workflowReglas = await sbGet('pmps_workflow_reglas','*','&order=created_at.desc'); }catch(e){ workflowReglas = []; }
   if(!workflowReglas.length){
     wrap.innerHTML = '<div class="empty-state">Aún no has creado reglas personalizadas. Usa el formulario de arriba.</div>';
     return;
@@ -3938,20 +3935,21 @@ function renderAdminUsers(){
   const list = document.getElementById('admin-users-table');
   if(!list) return;
   list.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 80px 60px auto;gap:8px;padding:6px 0;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">
-      <span>Nombre</span><span>Iniciales</span><span>Leads</span><span></span>
+    <div style="display:grid;grid-template-columns:1fr 80px 70px 60px auto;gap:8px;padding:6px 0;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">
+      <span>Nombre</span><span>Iniciales</span><span>Rol</span><span>Leads</span><span></span>
     </div>
     ${allNames.map(name=>{
       const u = USERS_LIVE[name];
       const nLeads = leads.filter(l=>l.responsable===name).length;
       const nClientes = clientes.filter(c=>c.responsable===name).length;
-      return `<div style="display:grid;grid-template-columns:1fr 80px 60px auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-        <input value="${name}" id="uname-${name.replace(/\s/g,'_')}" 
+      return `<div style="display:grid;grid-template-columns:1fr 80px 70px 60px auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <input value="${name}" id="uname-${name.replace(/\s/g,'_')}"
           style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font);background:var(--bg)"
           onchange="updateUserName('${name}', this.value)">
-        <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">${u.initials}</span>
+        <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">${u.initials}${u.email?' ⚙️':''}</span>
+        <span style="font-size:11px;color:var(--muted)">${u.rol==='admin'?'Admin':'Vendedor'}</span>
         <span style="font-size:12px;color:var(--muted)">${nLeads}L / ${nClientes}C</span>
-        <button onclick="removeUser('${name}')" 
+        <button onclick="removeUser('${name}')"
           style="background:none;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;color:var(--red);font-size:11px;cursor:pointer;white-space:nowrap">
           Eliminar
         </button>
@@ -3960,97 +3958,125 @@ function renderAdminUsers(){
   `;
 }
 
-function updateUserName(oldName, newName){
+async function updateUserName(oldName, newName){
   newName = newName.trim();
   if(!newName || newName===oldName) return;
-  if(USERS_LIVE[newName]){ showToast('Ya existe un usuario con ese nombre','⚠️'); return; }
-  USERS_LIVE[newName] = USERS_LIVE[oldName];
-  CLAVES_LIVE[newName] = CLAVES_LIVE[oldName];
-  delete USERS_LIVE[oldName];
-  delete CLAVES_LIVE[oldName];
-  // Actualizar dropdown login
-  rebuildLoginSelect();
-  showToast(`Nombre actualizado a "${newName}" ✓`);
+  if(USERS_LIVE[newName]){ showToast('Ya existe un usuario con ese nombre','⚠️'); document.getElementById('uname-'+oldName.replace(/\s/g,'_')).value = oldName; return; }
+  try {
+    await sbSecureWrite('update', 'pmps_usuarios', {nombre: oldName}, {nombre: newName});
+    await initUsuarios();
+    renderAdminUsers(); renderAdminClaves(); renderMigrarSelects();
+    showToast(`Nombre actualizado a "${newName}" ✓ (nota: registros previos de leads/clientes que decían "${oldName}" no se renombran solos — usa Migrar si hace falta)`);
+  } catch(e){ showToast('Error al renombrar: '+e.message,'⚠️'); document.getElementById('uname-'+oldName.replace(/\s/g,'_')).value = oldName; }
 }
 
-function removeUser(name){
+async function removeUser(name){
   const nL = leads.filter(l=>l.responsable===name).length;
   const nC = clientes.filter(c=>c.responsable===name).length;
-  if(!confirm(`¿Eliminar a ${name}?\nTiene ${nL} leads y ${nC} clientes asignados.\nAnte de eliminar, usa "Migrar" para reasignar sus registros.`)) return;
-  delete USERS_LIVE[name];
-  delete CLAVES_LIVE[name];
-  rebuildLoginSelect();
-  renderAdminUsers();
-  renderAdminClaves();
-  renderMigrarSelects();
-  showToast(`${name} eliminado del sistema`);
+  if(!confirm(`¿Eliminar a ${name}?\nTiene ${nL} leads y ${nC} clientes asignados.\nAntes de eliminar, usa "Migrar" para reasignar sus registros.\n\nEsto también revocará su acceso real si tiene cuenta (correo).`)) return;
+  const email = USERS_LIVE[name]?.email || null;
+  try {
+    const r = await fetch(`${SB_URL}/functions/v1/admin-usuarios`, {
+      method:'POST', headers:{apikey:SB_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({actor: currentUser.nombre, action:'eliminar_usuario', nombre:name, email})
+    });
+    const body = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(body.error||'Error al eliminar');
+    await initUsuarios();
+    renderAdminUsers(); renderAdminClaves(); renderMigrarSelects();
+    showToast(`${name} eliminado del sistema`);
+  } catch(e){ showToast('Error al eliminar: '+e.message,'⚠️'); }
 }
 
-function addUsuario(){
+async function addUsuario(){
   const nombre = document.getElementById('nu-nombre').value.trim();
   const iniciales = document.getElementById('nu-iniciales').value.trim().toUpperCase();
   const clave = document.getElementById('nu-clave').value.trim();
+  const correo = document.getElementById('nu-correo').value.trim();
+  const rol = document.getElementById('nu-rol').value;
   if(!nombre||!iniciales){ showToast('Nombre e iniciales son requeridos','⚠️'); return; }
-  if(USERS_LIVE[nombre]){ showToast('Ya existe un usuario con ese nombre','⚠️'); return; }
-  USERS_LIVE[nombre] = { initials: iniciales };
-  CLAVES_LIVE[nombre] = clave || CLAVE_EQUIPO;
-  AV_COLORS[nombre] = '#'+Math.floor(Math.random()*0x666666+0x333333).toString(16);
-  document.getElementById('nu-nombre').value='';
-  document.getElementById('nu-iniciales').value='';
-  document.getElementById('nu-clave').value='';
-  rebuildLoginSelect();
-  renderAdminUsers();
-  renderAdminClaves();
-  renderMigrarSelects();
-  showToast(`Usuario ${nombre} agregado ✓`);
+  if(!clave){ showToast('La clave es requerida','⚠️'); return; }
+  if(USERS_LIVE[nombre]||nombre==='Administrador'){ showToast('Ya existe un usuario con ese nombre','⚠️'); return; }
+  try {
+    if(correo){
+      const r = await fetch(`${SB_URL}/functions/v1/admin-usuarios`, {
+        method:'POST', headers:{apikey:SB_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({actor: currentUser.nombre, action:'crear_con_correo', nombre, email: correo, password: clave, rol, iniciales})
+      });
+      const body = await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(body.error||'Error al crear usuario');
+    } else {
+      await sbSecureWrite('insert', 'pmps_usuarios', {}, {nombre, rol, iniciales});
+      await fetch(`${SB_URL}/rest/v1/rpc/usuario_set_clave_local`, {
+        method:'POST', headers:{apikey:SB_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({p_actor: currentUser.nombre, p_nombre: nombre, p_clave: clave})
+      });
+    }
+    document.getElementById('nu-nombre').value='';
+    document.getElementById('nu-iniciales').value='';
+    document.getElementById('nu-clave').value='';
+    document.getElementById('nu-correo').value='';
+    await initUsuarios();
+    renderAdminUsers(); renderAdminClaves(); renderMigrarSelects();
+    showToast(`Usuario ${nombre} agregado ✓`);
+  } catch(e){ showToast('Error: '+e.message,'⚠️'); }
 }
 
 function rebuildLoginSelect(){
   const sel = document.getElementById('login-user');
-  const names = Object.keys(USERS_LIVE);
+  if(!sel) return;
+  const names = Object.keys(USERS_LIVE).sort();
   sel.innerHTML = `<option value="">— Selecciona —</option>
     <option value="Administrador:AD" style="font-weight:600">⚙️ Administrador</option>
-    ${names.map(n=>`<option value="${n}:${USERS_LIVE[n].initials}">${n}</option>`).join('')}`;
+    ${names.map(n=>{
+      const u = USERS_LIVE[n];
+      const marca = u.rol==='admin' ? '⚙️ ' : '';
+      return `<option value="${n}:${u.initials}" ${u.rol==='admin'?'style="font-weight:600"':''}>${marca}${n}</option>`
+    }).join('')}`;
 }
 
 function renderAdminClaves(){
   const list = document.getElementById('admin-claves-list');
   if(!list) return;
-  const display = document.getElementById('clave-actual-display');
-  if(display) display.textContent = CLAVE_EQUIPO;
   const allUsers = ['Administrador', ...Object.keys(USERS_LIVE)];
-  list.innerHTML = allUsers.map(name=>`
+  list.innerHTML = allUsers.map(name=>{
+    const tieneCorreo = !!EMAIL_MAP[name];
+    return `
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="flex:1;font-size:13px;font-weight:500">${name}</span>
-      <input type="password" value="${CLAVES_LIVE[name]||''}" id="clave-edit-${name.replace(/\s/g,'_')}"
-        style="width:160px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--mono);background:var(--bg);margin:0">
+      <span style="flex:1;font-size:13px;font-weight:500">${name} ${tieneCorreo?'<span style="font-size:10px;color:var(--muted)">(cuenta real: '+EMAIL_MAP[name]+')</span>':'<span style="font-size:10px;color:var(--muted)">(clave local)</span>'}</span>
+      <input type="password" placeholder="Nueva contraseña" id="clave-edit-${name.replace(/\s/g,'_')}"
+        style="width:180px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--mono);background:var(--bg);margin:0">
       <button onclick="guardarClave('${name}')"
         style="background:var(--accent);border:none;border-radius:6px;padding:6px 14px;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap">
         Guardar
       </button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
-function guardarClave(name){
+async function guardarClave(name){
   const input = document.getElementById('clave-edit-'+name.replace(/\s/g,'_'));
   const nueva = input.value.trim();
-  if(!nueva){ showToast('La clave no puede estar vacía','⚠️'); return; }
-  CLAVES_LIVE[name] = nueva;
-  showToast(`Clave de ${name} actualizada ✓`);
-}
-
-function cambiarClaveEquipo(){
-  const nueva = document.getElementById('nueva-clave-equipo').value.trim();
-  if(!nueva){ showToast('Ingresa la nueva clave','⚠️'); return; }
-  CLAVE_EQUIPO = nueva;
-  // Actualizar todos los usuarios que usaban la clave del equipo
-  Object.keys(CLAVES_LIVE).forEach(name=>{
-    if(name!=='Administrador') CLAVES_LIVE[name] = nueva;
-  });
-  document.getElementById('nueva-clave-equipo').value='';
-  renderAdminClaves();
-  showToast(`Clave del equipo actualizada a "${nueva}" ✓`);
+  if(!nueva || nueva.length<6){ showToast('La clave debe tener al menos 6 caracteres','⚠️'); return; }
+  const email = EMAIL_MAP[name];
+  try {
+    if(email){
+      const r = await fetch(`${SB_URL}/functions/v1/admin-usuarios`, {
+        method:'POST', headers:{apikey:SB_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({actor: currentUser.nombre, action:'cambiar_clave_correo', email, password: nueva})
+      });
+      const body = await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(body.error||'Error al cambiar clave');
+    } else {
+      const r = await fetch(`${SB_URL}/rest/v1/rpc/usuario_set_clave_local`, {
+        method:'POST', headers:{apikey:SB_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({p_actor: currentUser.nombre, p_nombre: name, p_clave: nueva})
+      });
+      if(!r.ok) throw new Error((await r.json().catch(()=>({}))).message||'Error al cambiar clave');
+    }
+    input.value = '';
+    showToast(`Clave de ${name} actualizada ✓`);
+  } catch(e){ showToast('Error: '+e.message,'⚠️'); }
 }
 
 function renderMigrarSelects(){
@@ -5487,8 +5513,8 @@ async function loadReportes(){
     // Poblar cliente en form
     const rfCli = document.getElementById('rf-cliente')
     if(rfCli){
-      const clisData = await sbGet('pmps_clientes','empresa','&order=empresa.asc').catch(()=>[])
-      rfCli.innerHTML = '<option value="">— Selecciona —</option>'+clisData.map(c=>`<option>${c.empresa}</option>`).join('')
+      const cliOptsForm = [...new Set(clientes.map(c=>c.empresa).filter(Boolean))].sort()
+      rfCli.innerHTML = '<option value="">— Selecciona —</option>'+cliOptsForm.map(c=>`<option>${c}</option>`).join('')
     }
     // Tab todos solo admin
     if(currentUser.rol==='admin'){
@@ -5818,6 +5844,9 @@ async function dirSaveModal(){
     showToast('Lead actualizado ✓')
   } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
+
+// Boot: cargar usuarios reales ANTES de que alguien intente iniciar sesión
+initUsuarios()
 
 </script>
 </body>
