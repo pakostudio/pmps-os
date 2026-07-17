@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PMPS CRM</title>
+<script
+  src="https://js.sentry-cdn.com/1c7173be43f4dbe5744e749419443320.min.js"
+  crossorigin="anonymous"
+></script>
+<script>
+  if (window.Sentry) {
+    Sentry.onLoad(function () {
+      Sentry.init({
+        release: "pmps-os-v2@2026.07",
+      });
+    });
+  }
+</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 210'%3E%3Cpath d='M100 6 C 62 52, 34 92, 34 136 C 34 172, 64 198, 100 198 C 136 198, 166 172, 166 136 C 166 92, 138 52, 100 6 Z' fill='%23123A63'/%3E%3Cpath d='M100 100 C 87 118, 80 132, 80 146 C 80 161, 89 172, 100 172 C 111 172, 120 161, 120 146 C 120 132, 113 118, 100 100 Z' fill='%23F2F6FB'/%3E%3Cpath d='M100 112 C 90 126, 85 137, 85 148 C 85 159, 92 167, 100 167 C 108 167, 115 159, 115 148 C 115 137, 110 126, 100 112 Z' fill='%2329ABE2'/%3E%3Cpath d='M52 178 A 48 20 0 0 0 148 178 Z' fill='%2329ABE2'/%3E%3C/svg%3E">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
