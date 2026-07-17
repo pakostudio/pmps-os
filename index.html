@@ -316,6 +316,26 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   </div>
 </div>
 
+<!-- Pantalla: restablecer contraseña (llegada desde el link de recuperación por correo) -->
+<div id="reset-screen" style="display:none;position:fixed;inset:0;background:linear-gradient(160deg,#EAF3FB,#F7FBFE);z-index:300;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:360px;max-width:90vw;box-shadow:0 12px 32px rgba(18,58,99,.18)">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">🔑 Restablecer contraseña</div>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px">Escribe tu nueva contraseña para entrar de nuevo a PMPS CRM.</div>
+    <label style="font-size:11px;color:var(--muted)">Nueva contraseña</label>
+    <div style="position:relative;margin-bottom:10px">
+      <input type="password" id="reset-nueva" style="width:100%;padding:8px 36px 8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;box-sizing:border-box">
+      <span onclick="togglePassVis('reset-nueva', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:14px">👁️</span>
+    </div>
+    <label style="font-size:11px;color:var(--muted)">Confirmar nueva contraseña</label>
+    <div style="position:relative;margin-bottom:6px">
+      <input type="password" id="reset-confirmar" style="width:100%;padding:8px 36px 8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;box-sizing:border-box">
+      <span onclick="togglePassVis('reset-confirmar', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:14px">👁️</span>
+    </div>
+    <div id="reset-error" style="color:var(--red,#A32D2D);font-size:12px;margin-bottom:8px;display:none"></div>
+    <button onclick="guardarResetClave()" style="width:100%;background:var(--accent);border:none;border-radius:8px;padding:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-top:6px">Guardar y entrar</button>
+  </div>
+</div>
+
 <!-- APP -->
 <div id="app">
   <div class="header">
@@ -1679,9 +1699,14 @@ const FAQ_DATA = [
   {q:'¿Qué es la pestaña "Automatizaciones" en el Panel de Administrador?', a:'Es un panel que revisa solo, en tiempo real, tres situaciones: leads sin contacto por 7 días o más, clientes con cuenta por cobrar pendiente, y pagos por vencer en los próximos 3 días. Cada regla se puede activar/desactivar y tiene un botón para ejecutar la acción correspondiente (marcar frío, copiar recordatorio de cobro, etc.).'},
   {q:'¿Cómo cambio entre ver el Catálogo o el Directorio en Tabla o en Tarjetas?', a:'En la parte superior de esas pantallas hay dos botones: "☰ Tabla" y "▦ Tarjetas". El sistema recuerda cuál elegiste la próxima vez que entres.'},
   {q:'¿Qué es "Forecast ponderado por probabilidad" en Presupuesto?', a:'En Presupuesto → pestaña de cada asesor, los meses que todavía no tienen venta real permiten capturar un porcentaje de probabilidad (0-100%). El sistema calcula una columna "Ponderado" (presupuesto × probabilidad) y un total de "Proyección ponderada" más realista que el presupuesto completo.'},
-  {q:'Olvidé mi clave de acceso, ¿qué hago?', a:'Pide al Administrador que entre a Administrador → Claves y te confirme o te asigne una nueva. Por seguridad, ningún usuario (ni el Administrador) puede ver la clave de otra persona directamente escrita en ningún lado del sistema.'},
+  {q:'Olvidé mi clave de acceso, ¿qué hago?', a:'Tienes dos caminos. Si tu usuario tiene cuenta con correo (aparece con el ícono ⚙️ en el login), da clic en "¿Olvidaste tu contraseña?" debajo del botón Entrar — te llegará un correo para restablecerla. Si tu usuario no tiene correo (clave local), pide al Administrador que entre a Administrador → Claves y te asigne una nueva. Por seguridad, ninguna clave queda escrita en texto plano en ningún lado del sistema — ni el Administrador puede "ver" tu clave actual, solo asignarte una nueva.'},
+  {q:'¿Cómo cambio mi propia contraseña sin pedirle al Administrador?', a:'Da clic en tu nombre, arriba a la derecha, y elige "🔑 Cambiar mi contraseña". Te pedirá tu contraseña actual (para confirmar que eres tú) y la nueva contraseña dos veces. Aplica al instante, sin importar si tu cuenta es con correo o clave local.'},
+  {q:'¿Cómo veo lo que estoy escribiendo en un campo de contraseña?', a:'Todos los campos de contraseña (login, Cambiar mi contraseña, y el panel de Claves del Administrador) tienen un ícono de ojo 👁️ a la derecha — da clic para mostrar el texto, y de nuevo para volver a ocultarlo.'},
   {q:'¿Los cambios que hago se guardan solos o necesito apretar un botón?', a:'Depende del módulo: en Presupuesto los cambios se guardan automáticamente al salir del cuadro que editaste (verás un mensaje "Actualizado ✓"). En Forecast hay un botón "💾 Guardar cambios". En Equipos, Catálogo y Ventas Históricas usas el ícono de lápiz ✏️, editas en la ventana que se abre, y presionas "💾 Guardar".'},
   {q:'¿Puedo usar el sistema desde mi celular?', a:'Sí, es una página web normal — solo entra a la misma dirección desde el navegador de tu celular e inicia sesión igual que en computadora. Algunas tablas grandes se ven mejor en una pantalla más ancha.'},
+  {q:'En el Panel de Administrador, ¿qué es "Usuarios" y qué es "Claves"?', a:'"Usuarios" es donde el Administrador da de alta, edita el nombre/rol, o elimina a alguien del equipo. "Claves" es donde el Administrador puede asignarle una nueva contraseña a cualquier persona (por ejemplo si olvidó la suya y no tiene correo registrado). Ambos paneles leen y escriben directo en la base de datos real — cualquier cambio se refleja de inmediato para todo el equipo.'},
+  {q:'¿Qué es el tab "⚙️ Workflow" en el Panel de Administrador?', a:'Ahí puedes crear tus propias reglas de aviso automático: eliges un módulo (Leads o Clientes), un campo a vigilar, una condición (mayor/menor/igual/diferente que cierto valor) y el mensaje que se debe mandar. Cada regla activa se evalúa en tiempo real y genera una notificación real al responsable cuando se cumple, además de las 3 reglas fijas de Automatizaciones.'},
+  {q:'¿Por qué antes el dropdown de Cliente en Reportes FO-VE-01 aparecía vacío?', a:'Era un error ya corregido: el formulario leía de una tabla que no tenía los clientes cargados. Ahora toma la lista directamente de los mismos clientes activos que ves en el CRM, así que siempre debe aparecer poblada.'},
   {q:'¿A quién le aviso si encuentro un error o algo no funciona?', a:'Repórtaselo directamente al Administrador con la mayor cantidad de detalle posible: qué estabas haciendo, en qué módulo, y si es posible una captura de pantalla.'},
 ];
 
@@ -6003,6 +6028,46 @@ async function dirSaveModal(){
 
 // Boot: cargar usuarios reales ANTES de que alguien intente iniciar sesión
 initUsuarios()
+
+// ── Restablecer contraseña: detecta el link que llega por correo ──────────
+// Supabase Auth redirige a esta misma app con #access_token=...&type=recovery
+let recoveryAccessToken = null;
+(function detectarRecoveryLink(){
+  const hash = window.location.hash || '';
+  if(hash.includes('type=recovery') && hash.includes('access_token=')){
+    const params = new URLSearchParams(hash.replace('#',''));
+    recoveryAccessToken = params.get('access_token');
+    if(recoveryAccessToken){
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('reset-screen').style.display = 'flex';
+      history.replaceState(null, '', window.location.pathname);
+    }
+  }
+})();
+
+async function guardarResetClave(){
+  const errBox = document.getElementById('reset-error');
+  errBox.style.display = 'none';
+  const nueva = document.getElementById('reset-nueva').value;
+  const confirmar = document.getElementById('reset-confirmar').value;
+  if(!nueva || !confirmar){ errBox.textContent='Completa los dos campos.'; errBox.style.display='block'; return; }
+  if(nueva.length < 6){ errBox.textContent='La contraseña debe tener al menos 6 caracteres.'; errBox.style.display='block'; return; }
+  if(nueva !== confirmar){ errBox.textContent='Las contraseñas no coinciden.'; errBox.style.display='block'; return; }
+  if(!recoveryAccessToken){ errBox.textContent='El link de recuperación ya expiró. Solicita uno nuevo desde el login.'; errBox.style.display='block'; return; }
+  try{
+    const r = await fetch(`${SB_URL}/auth/v1/user`, {
+      method:'PUT', headers:{apikey:SB_KEY,'Authorization':`Bearer ${recoveryAccessToken}`,'Content-Type':'application/json'},
+      body: JSON.stringify({password: nueva})
+    });
+    if(!r.ok) throw new Error('No se pudo actualizar la contraseña. Solicita un nuevo link de recuperación.');
+    document.getElementById('reset-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    showToast('Contraseña actualizada ✓ Ya puedes iniciar sesión.');
+  } catch(e){
+    errBox.textContent = e.message;
+    errBox.style.display = 'block';
+  }
+}
 
 </script>
 </body>
