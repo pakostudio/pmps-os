@@ -4833,8 +4833,8 @@ async function fcGuardarAsesor(clave){
   let ok=0, err=0
   for(const [id, meses] of Object.entries(cambios)){
     try {
-      await sbPatch('forecast_2026', id, {...meses, updated_at: new Date().toISOString()})
-      const idx = forecast_data.findIndex(r=>r.id===id)
+      await sbPatch('pmps_forecast_2026', id, {...meses, updated_at: new Date().toISOString()})
+      const idx = forecast_data.findIndex(r=>r.id==id)
       if(idx>=0) Object.assign(forecast_data[idx], meses)
       ok++
     } catch(e){ err++; console.error(e) }
@@ -5247,7 +5247,7 @@ async function presUpdateReal(mes, id, valor){
   if(!id){ showToast('Guarda primero el presupuesto en Supabase','⚠️'); return }
   const v = parseFloat(valor)||0
   try {
-    await sbPatch('presupuesto_2026', id, {real: v, updated_by: currentUser.nombre, updated_at: new Date().toISOString()})
+    await sbPatch('pmps_presupuesto_2026', id, {real: v, updated_by: currentUser.nombre, updated_at: new Date().toISOString()})
     const idx = presupuesto_data.findIndex(r=>r.mes===mes)
     if(idx>=0) presupuesto_data[idx].real = v
     renderPresupuesto()
@@ -5461,7 +5461,7 @@ async function catSaveEdit(){
   if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
   try {
     await sbPatch('pmps_productos', catEditingId, {nombre, familia, uso_dosificacion, descripcion})
-    const idx = productos_cat.findIndex(x=>x.id===catEditingId)
+    const idx = productos_cat.findIndex(x=>x.id==catEditingId)
     if(idx>=0) Object.assign(productos_cat[idx], {nombre, familia, uso_dosificacion, descripcion})
     document.getElementById('modal-cat-edit').style.display = 'none'
     renderCatPills(); catFilter()
@@ -6030,7 +6030,7 @@ async function dirSaveModal(){
   const notas = document.getElementById('dir-modal-notas').value
   try {
     await sbPatch('pmps_leads_menlun', dirEditingId, {estatus, vendedor_asignado: vendedor, notas})
-    const idx = dirAllData.findIndex(x=>x.id===dirEditingId)
+    const idx = dirAllData.findIndex(x=>x.id==dirEditingId)
     if(idx>=0){ dirAllData[idx].estatus=estatus; dirAllData[idx].vendedor_asignado=vendedor; dirAllData[idx].notas=notas }
     document.getElementById('modal-dir').style.display = 'none'
     dirRenderKpis(dirAllData)
