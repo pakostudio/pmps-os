@@ -5096,7 +5096,7 @@ function renderPresupuesto(){
   const REAL26_DEFAULT = {ENE:3228369,FEB:2553580,MAR:3073509,ABR:3098153,MAY:3139981,JUN:2819065}
   function getReal26(mes){
     const row = presupuesto_data.find(r=>r.mes===MES_IDX[mes])
-    return row ? parseFloat(row.real)||0 : REAL26_DEFAULT[mes]||0
+    return row ? parseFloat(row.real_c26)||0 : REAL26_DEFAULT[mes]||0
   }
   const fmtK = v => {
     if(!v) return '—'
@@ -5218,7 +5218,7 @@ const MESES_NOMBRE_PRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Jul
 function presExportExcel(){
   if(presActiveSubtab==='general'){
     const rows = [...presupuesto_data].sort((a,b)=>a.mes-b.mes).map(r=>{
-      const presup = parseFloat(r.presupuesto||0), real = parseFloat(r.real||0)
+      const presup = parseFloat(r.presup_c26||0), real = parseFloat(r.real_c26||0)
       return [MESES_NOMBRE_PRES[r.mes-1]||r.mes, presup, real, presup>0?Math.round(real/presup*100)+'%':'—']
     })
     exportModuloExcel('PMPS_Presupuesto_2026', 'Presupuesto', ['Mes',"Presupuesto C'26","Real C'26",'% Cumplimiento'], rows)
@@ -5233,7 +5233,7 @@ function presExportExcel(){
 function presExportPDF(){
   if(presActiveSubtab==='general'){
     const rows = [...presupuesto_data].sort((a,b)=>a.mes-b.mes).map(r=>{
-      const presup = parseFloat(r.presupuesto||0), real = parseFloat(r.real||0)
+      const presup = parseFloat(r.presup_c26||0), real = parseFloat(r.real_c26||0)
       return [MESES_NOMBRE_PRES[r.mes-1]||r.mes, fmtValor(presup), fmtValor(real), presup>0?Math.round(real/presup*100)+'%':'—']
     })
     exportModuloPDF('Presupuesto 2026', ['Mes',"Presupuesto C'26","Real C'26",'% Cumplimiento'], rows)
@@ -5254,11 +5254,11 @@ function presRenderGraficaMensual(){
     if(!ctx || typeof Chart === 'undefined') return
     const presup = MESES_LABEL.map((_,i)=>{
       const row = presupuesto_data.find(r=>r.mes===i+1)
-      return row ? parseFloat(row.presupuesto)||0 : 0
+      return row ? parseFloat(row.presup_c26)||0 : 0
     })
     const real = MESES_LABEL.map((_,i)=>{
       const row = presupuesto_data.find(r=>r.mes===i+1)
-      return row ? parseFloat(row.real)||0 : 0
+      return row ? parseFloat(row.real_c26)||0 : 0
     })
     if(presChartInstance) presChartInstance.destroy()
     presChartInstance = new Chart(ctx, {
@@ -5281,9 +5281,9 @@ async function presUpdateReal(mes, id, valor){
   if(!id){ showToast('Guarda primero el presupuesto en Supabase','⚠️'); return }
   const v = parseFloat(valor)||0
   try {
-    await sbPatch('pmps_presupuesto_2026', id, {real: v, updated_by: currentUser.nombre, updated_at: new Date().toISOString()})
+    await sbPatch('pmps_presupuesto_2026', id, {real_c26: v, updated_at: new Date().toISOString()})
     const idx = presupuesto_data.findIndex(r=>r.mes===mes)
-    if(idx>=0) presupuesto_data[idx].real = v
+    if(idx>=0) presupuesto_data[idx].real_c26 = v
     renderPresupuesto()
     showToast(`Real de mes ${mes} actualizado ✓`)
   } catch(e){ showToast('Error guardando: '+e.message,'⚠️') }
