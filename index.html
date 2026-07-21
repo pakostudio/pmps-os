@@ -1548,6 +1548,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button onclick="vhExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
       <button onclick="vhExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
       <button onclick="vhOpenGraficas()" class="btn-export-xls" style="border-color:#B5D4F4;color:#1B3A6B">📊 Ver gráficas</button>
+      <input type="file" id="vh-import-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="vhImportFile(event)">
+      <button onclick="document.getElementById('vh-import-file').click()" class="btn-export-xls" style="border-color:#B5D4F4;color:#1B3A6B" title="Importar formato MICROSIP">📥 Importar MICROSIP</button>
       <span class="results-label" id="vh-count">—</span>
     </div>
     <table style="width:100%;border-collapse:collapse">
@@ -3625,11 +3627,28 @@ function autoToggleRule(id){
   localStorage.setItem('auto_rule_'+id, cur?'0':'1');
   renderAutomatizaciones();
 }
+const AUTO_UMBRAL_DEFAULT = { 'leads-frios': 7, 'pago-vence': 3 };
+function autoGetUmbral(id){
+  const v = localStorage.getItem('auto_umbral_'+id);
+  const n = v!==null ? parseInt(v) : NaN;
+  return !isNaN(n) && n>0 ? n : AUTO_UMBRAL_DEFAULT[id];
+}
+function autoEditarUmbral(id){
+  const actual = autoGetUmbral(id);
+  const nuevo = prompt('¿Cada cuántos días quieres que se active esta regla?', actual);
+  if(nuevo===null) return;
+  const n = parseInt(nuevo);
+  if(isNaN(n) || n<=0){ showToast('Ingresa un número de días válido','⚠️'); return; }
+  localStorage.setItem('auto_umbral_'+id, String(n));
+  showToast('Umbral actualizado ✓');
+  renderAutomatizaciones();
+}
 function autoUpdateBadge(){
   let n=0;
-  if(autoRuleEnabled('leads-frios')) n += leads.filter(l=>l.etapa!=='Cerrado ganado'&&l.etapa!=='Cerrado perdido'&&diasDesde(l.ultimo_movimiento)>=7&&l.temperatura!=='❄️ Frío').length;
+  const uLF = autoGetUmbral('leads-frios'), uPV = autoGetUmbral('pago-vence');
+  if(autoRuleEnabled('leads-frios')) n += leads.filter(l=>l.etapa!=='Cerrado ganado'&&l.etapa!=='Cerrado perdido'&&diasDesde(l.ultimo_movimiento)>=uLF&&l.temperatura!=='❄️ Frío').length;
   if(autoRuleEnabled('cxc-pendiente')) n += clientes.filter(c=>{const ci=c.ciclo||{};return ci.cxc&&!ci.pago;}).length;
-  if(autoRuleEnabled('pago-vence')) n += clientes.filter(c=>{const ci=c.ciclo||{};return ci.pago_fecha_val&&!ci.pago&&diasDesde(ci.pago_fecha_val)>=-3&&diasDesde(ci.pago_fecha_val)<=0;}).length;
+  if(autoRuleEnabled('pago-vence')) n += clientes.filter(c=>{const ci=c.ciclo||{};return ci.pago_fecha_val&&!ci.pago&&diasDesde(ci.pago_fecha_val)>=-uPV&&diasDesde(ci.pago_fecha_val)<=0;}).length;
   const badge = document.getElementById('atab-automatizaciones-badge');
   if(badge){ badge.style.display = n>0?'inline-block':'none'; badge.textContent = n; }
 }
@@ -3637,27 +3656,28 @@ function renderAutomatizaciones(){
   const wrap = document.getElementById('automatizaciones-list');
   if(!wrap) return;
 
-  const leadsSinContacto = leads.filter(l=>l.etapa!=='Cerrado ganado'&&l.etapa!=='Cerrado perdido'&&diasDesde(l.ultimo_movimiento)>=7&&l.temperatura!=='❄️ Frío');
+  const uLF = autoGetUmbral('leads-frios'), uPV = autoGetUmbral('pago-vence');
+  const leadsSinContacto = leads.filter(l=>l.etapa!=='Cerrado ganado'&&l.etapa!=='Cerrado perdido'&&diasDesde(l.ultimo_movimiento)>=uLF&&l.temperatura!=='❄️ Frío');
   const clientesCxc = clientes.filter(c=>{const ci=c.ciclo||{};return ci.cxc&&!ci.pago;});
-  const clientesPagoVence = clientes.filter(c=>{const ci=c.ciclo||{};return ci.pago_fecha_val&&!ci.pago&&diasDesde(ci.pago_fecha_val)>=-3&&diasDesde(ci.pago_fecha_val)<=0;});
+  const clientesPagoVence = clientes.filter(c=>{const ci=c.ciclo||{};return ci.pago_fecha_val&&!ci.pago&&diasDesde(ci.pago_fecha_val)>=-uPV&&diasDesde(ci.pago_fecha_val)<=0;});
 
   const rules = [
     { id:'leads-frios', icon:'❄️',
-      trigger:'Lead sin movimiento', condition:'≥ 7 días sin contacto y no cerrado',
+      trigger:'Lead sin movimiento', condition:`≥ ${uLF} días sin contacto y no cerrado`,
       action:'Marcar temperatura como Frío en todos los coincidentes',
-      matches: leadsSinContacto,
+      matches: leadsSinContacto, editable:true,
       renderItem: l => `${esc(l.empresa)} — ${esc(l.responsable||'')} · ${diasDesde(l.ultimo_movimiento)} días`,
       exec: 'autoExecLeadsFrios' },
     { id:'cxc-pendiente', icon:'⏳',
       trigger:'Cliente con factura emitida', condition:'Cuenta por cobrar marcada y sin pago registrado',
       action:'Copiar lista de cobro pendiente (para enviar por email/WhatsApp)',
-      matches: clientesCxc,
+      matches: clientesCxc, editable:false,
       renderItem: c => `${esc(c.empresa)} — ${esc(c.responsable||'')}${c.ciclo?.factura_monto?' · $'+Number(c.ciclo.factura_monto).toLocaleString('es-MX'):''}`,
       exec: 'autoExecCxcPendiente' },
     { id:'pago-vence', icon:'⚠️',
-      trigger:'Fecha de pago comprometida', condition:'Vence en los próximos 3 días y sigue sin pago',
+      trigger:'Fecha de pago comprometida', condition:`Vence en los próximos ${uPV} días y sigue sin pago`,
       action:'Copiar recordatorio urgente de vencimiento de pago',
-      matches: clientesPagoVence,
+      matches: clientesPagoVence, editable:true,
       renderItem: c => `${esc(c.empresa)} — vence ${fmtFecha(c.ciclo.pago_fecha_val)} ${icsBtn(`Pago pendiente — ${c.empresa}`, `Recordatorio de pago por cobrar de ${c.empresa}.`, c.ciclo.pago_fecha_val)}`,
       exec: 'autoExecPagoVence' },
   ]
@@ -3669,7 +3689,10 @@ function renderAutomatizaciones(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:220px">
           <div style="font-weight:700;font-size:14px;margin-bottom:4px">${r.icon} ${r.trigger}</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:2px"><b>Condición:</b> ${r.condition}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:2px">
+            <b>Condición:</b> ${r.condition}
+            ${r.editable?`<span onclick="autoEditarUmbral('${r.id}')" title="Editar umbral" style="cursor:pointer;margin-left:4px">✏️</span>`:''}
+          </div>
           <div style="font-size:12px;color:var(--muted)"><b>Acción:</b> ${r.action}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
@@ -5897,6 +5920,90 @@ function vhPoblarAsesores(){
   const asesores = [...new Set(ventas_data.map(r=>r.asesor_nombre).filter(Boolean))].sort()
   sel.innerHTML = '<option value="">Todos los asesores</option>' + asesores.map(a=>`<option>${esc(a)}</option>`).join('')
   sel.value = asesores.includes(prevVal) ? prevVal : ''
+}
+
+// ── Importar formato MICROSIP (Excel/CSV) → pmps_ventas_historicas ──
+const VH_IMPORT_ALIASES = {
+  cliente: ['cliente','razon social','razón social','empresa','nombre cliente','nombre'],
+  asesor_nombre: ['asesor','vendedor','asesor_nombre','agente','vendedor asignado'],
+  anio: ['año','anio','ejercicio','year'],
+  sector: ['sector','giro','ramo'],
+  estado: ['estado','status'],
+  total: ['total','importe','monto','venta','ventas','total venta'],
+}
+function vhMatchCol(headers, aliases){
+  const norm = h => String(h||'').toLowerCase().trim();
+  for(const alias of aliases){
+    const idx = headers.findIndex(h=>norm(h)===alias);
+    if(idx>=0) return idx;
+  }
+  return -1;
+}
+function vhParseNumero(v){
+  if(v===null||v===undefined||v==='') return NaN;
+  if(typeof v==='number') return v;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  return n;
+}
+async function vhImportFile(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  if(currentUser.rol!=='admin'){ showToast('Solo un administrador puede importar datos','⚠️'); evt.target.value=''; return; }
+  loadXLSXLib(async ()=>{
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+      if(!rows.length){ showToast('El archivo está vacío','⚠️'); evt.target.value=''; return; }
+      const headers = rows[0];
+      const iCliente = vhMatchCol(headers, VH_IMPORT_ALIASES.cliente);
+      const iAsesor = vhMatchCol(headers, VH_IMPORT_ALIASES.asesor_nombre);
+      const iAnio = vhMatchCol(headers, VH_IMPORT_ALIASES.anio);
+      const iSector = vhMatchCol(headers, VH_IMPORT_ALIASES.sector);
+      const iEstado = vhMatchCol(headers, VH_IMPORT_ALIASES.estado);
+      const iTotal = vhMatchCol(headers, VH_IMPORT_ALIASES.total);
+      if(iCliente<0 || iTotal<0){
+        showToast('No se reconocen las columnas Cliente/Total en el archivo','⚠️');
+        evt.target.value=''; return;
+      }
+      const anioDefault = new Date().getFullYear();
+      const parsed = rows.slice(1).map(r=>({
+        cliente: String(r[iCliente]||'').trim(),
+        asesor_nombre: iAsesor>=0 ? String(r[iAsesor]||'').trim() : '',
+        anio: iAnio>=0 ? (parseInt(r[iAnio])||anioDefault) : anioDefault,
+        sector: iSector>=0 ? String(r[iSector]||'').trim() : '',
+        estado: iEstado>=0 ? String(r[iEstado]||'').trim() : '',
+        total: vhParseNumero(r[iTotal]),
+      })).filter(r=>r.cliente && !isNaN(r.total));
+      if(!parsed.length){ showToast('No se encontraron filas válidas para importar','⚠️'); evt.target.value=''; return; }
+      if(!confirm(`Se importarán ${parsed.length} registros de ventas (formato MICROSIP). ¿Continuar?`)){ evt.target.value=''; return; }
+      showToast(`Importando ${parsed.length} registros…`,'⏳');
+      let creados=0, actualizados=0, errores=0;
+      for(const row of parsed){
+        try{
+          const existente = ventas_data.find(v=>v.cliente===row.cliente && v.anio===row.anio && (v.asesor_nombre||'')===(row.asesor_nombre||''));
+          if(existente){
+            await sbSecureWrite('update','pmps_ventas_historicas',{id:existente.id},{total:row.total, sector:row.sector||existente.sector, estado:row.estado||existente.estado});
+            existente.total = row.total;
+            if(row.sector) existente.sector = row.sector;
+            if(row.estado) existente.estado = row.estado;
+            actualizados++;
+          } else {
+            const [nuevo] = await sbPost('pmps_ventas_historicas', row);
+            ventas_data.push(nuevo);
+            creados++;
+          }
+        } catch(e){ errores++; }
+      }
+      renderVhKpis(); vhPoblarAsesores(); vhFilter();
+      showToast(`Importación completa: ${creados} nuevos, ${actualizados} actualizados${errores?`, ${errores} con error`:''}`, errores?'⚠️':'✓');
+    } catch(e){
+      showToast('Error al leer el archivo: '+(e.message||''),'⚠️');
+    } finally {
+      evt.target.value = '';
+    }
+  });
 }
 
 function vhGetFiltered(){
