@@ -705,8 +705,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
       <!-- TAB: AUTOMATIZACIONES -->
       <div id="apanel-automatizaciones" style="display:none">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
           Reglas <b>trigger → condición → acción</b> que se evalúan en tiempo real contra tus leads y clientes. Actívalas o desactívalas, y ejecuta la acción con un clic — sin pasos manuales.
+        </div>
+        <div style="font-size:11.5px;color:#7A5B00;background:#FBF0DA;border:1px solid #F0D9A0;border-radius:8px;padding:10px 12px;margin-bottom:16px">
+          ℹ️ El botón <b>"Ejecutar acción"</b> hace la acción rápida de cada regla (marcar frío / copiar el texto al portapapeles). El <b>correo al responsable se envía aparte, automáticamente</b>, en cuanto aparece una coincidencia nueva — no necesitas hacer clic para que se mande. Puede tardar unos minutos en llegar.
         </div>
         <div id="automatizaciones-list"></div>
       </div>
@@ -739,6 +742,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
             <div><label>Valor</label><input id="wf-valor" placeholder="Ej. 5, Propuesta, true"></div>
             <div><label>Mensaje de la notificación</label><input id="wf-mensaje" placeholder="Ej. {empresa} necesita seguimiento"></div>
+          </div>
+          <div class="g3 mb12">
+            <div><label>Y además (opcional)</label><select id="wf-campo2"><option value="">— Sin segunda condición —</option></select></div>
+            <div><label>Condición 2</label>
+              <select id="wf-operador2">
+                <option value=">=">≥ (mayor o igual)</option>
+                <option value="<=">≤ (menor o igual)</option>
+                <option value="=">= (igual a)</option>
+                <option value="!=">≠ (distinto de)</option>
+              </select>
+            </div>
+            <div><label>Valor 2</label><input id="wf-valor2" placeholder="Ej. Platino"></div>
           </div>
           <button class="btn btn-sm" onclick="wfCrearRegla()">➕ Crear regla</button>
         </div>
@@ -1184,11 +1199,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <select class="fsel" id="cat-familia" onchange="catFilter()">
         <option value="">Todas las familias</option>
-        <option>Limpieza General</option><option>Limpieza CIP</option>
-        <option>Membranas</option><option>Cárnicos</option><option>Lácteos</option>
-        <option>Lavandería</option><option>Control Personal</option>
-        <option>Mantenimiento de Planta</option><option>Especialidades</option>
       </select>
+      <button onclick="catOpenNuevo()" class="btn btn-sm" style="background:#0F6E56">➕ Nuevo producto</button>
       <button onclick="catExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
       <button onclick="catExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
       <div style="display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden">
@@ -1221,10 +1233,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button onclick="document.getElementById('modal-cat-edit').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
       </div>
       <div style="padding:16px 20px">
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Clave</label>
+          <input type="text" id="cat-edit-clave" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
         <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Nombre</label>
           <input type="text" id="cat-edit-nombre" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
         <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Familia</label>
-          <input type="text" id="cat-edit-familia" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+          <input type="text" id="cat-edit-familia" list="cat-familias-datalist" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
         <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Uso / Dosificación</label>
           <input type="text" id="cat-edit-uso" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
         <div style="margin-bottom:4px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Descripción</label>
@@ -1237,6 +1251,33 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
   </div>
 
+  <!-- Modal nuevo producto (admin) -->
+  <div id="modal-cat-nuevo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:center;justify-content:center;padding:8px">
+    <div style="background:#fff;border-radius:16px;width:440px;max-width:95vw;max-height:calc(100vh - 16px);overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:600">Nuevo producto</div>
+        <button onclick="document.getElementById('modal-cat-nuevo').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+      </div>
+      <div style="padding:16px 20px">
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Clave</label>
+          <input type="text" id="cat-nuevo-clave" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Nombre *</label>
+          <input type="text" id="cat-nuevo-nombre" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Familia</label>
+          <input type="text" id="cat-nuevo-familia" list="cat-familias-datalist" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Uso / Dosificación</label>
+          <input type="text" id="cat-nuevo-uso" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:4px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Descripción</label>
+          <textarea id="cat-nuevo-descripcion" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px;min-height:70px;resize:vertical"></textarea></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
+        <button onclick="document.getElementById('modal-cat-nuevo').style.display='none'" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
+        <button onclick="catSaveNuevo()" style="padding:8px 16px;border-radius:8px;border:none;background:#0F6E56;color:#fff;font-family:var(--font);font-weight:500;cursor:pointer">➕ Crear producto</button>
+      </div>
+    </div>
+  </div>
+  <datalist id="cat-familias-datalist"></datalist>
+
   <div id="tab-equipos-wrap" class="tab-content" style="display:none;padding:16px">
     <div class="tbl-wrap">
       <div class="tbl-bar">
@@ -1244,7 +1285,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <input class="search-input" id="eq-search" placeholder="Buscar equipo..." oninput="eqFilter()"></div>
         <select class="fsel" id="eq-estado" onchange="eqFilter()">
           <option value="">Todos los estados</option>
-          <option>activo</option><option>en_revision</option><option>retirado</option>
         </select>
         <span class="results-label" id="eq-count">— equipos</span>
       </div>
@@ -1279,11 +1319,28 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <input type="file" accept="image/*" id="eq-edit-foto-input" style="display:none" onchange="eqFotoSeleccionada(this)">
           </label>
         </div>
-        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Ubicación</label>
-          <input type="text" id="eq-edit-ubicacion" placeholder="Ej. Almacén / Covacha / Cliente X" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Nombre</label>
+          <input type="text" id="eq-edit-nombre" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Código</label>
+            <input type="text" id="eq-edit-codigo" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Proveedor</label>
+            <input type="text" id="eq-edit-proveedor" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Ubicación</label>
+            <input type="text" id="eq-edit-ubicacion" placeholder="Ej. Almacén / Covacha / Cliente X" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Stock disponible</label>
+            <input type="number" id="eq-edit-stock" min="0" step="1" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        </div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Estado</label>
+          <input type="text" id="eq-edit-estado" list="eq-estados-datalist" placeholder="Ej. Disponible / Sin stock / En revisión" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Descripción</label>
+          <textarea id="eq-edit-descripcion" rows="2" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></textarea></div>
         <div style="margin-bottom:4px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Notas</label>
           <textarea id="eq-edit-notas" rows="2" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></textarea></div>
       </div>
+      <datalist id="eq-estados-datalist"></datalist>
       <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--border)">
         <button onclick="document.getElementById('modal-eq-edit').style.display='none'" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
         <button onclick="eqSaveEdit()" style="padding:8px 16px;border-radius:8px;border:none;background:#1B3A6B;color:#fff;font-family:var(--font);font-weight:500;cursor:pointer">💾 Guardar</button>
@@ -1295,7 +1352,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab2(this,'rtab-lista')">Mis reportes</button>
       <button class="tab-btn" onclick="switchTab2(this,'rtab-nuevo')">+ Nuevo reporte</button>
-      <button class="tab-btn" id="rtab-todos-btn" style="display:none" onclick="switchTab2(this,'rtab-todos')">Todos</button>
+      <button class="tab-btn" id="rtab-todos-btn" style="display:none" onclick="switchTab2(this,'rtab-todos');renderReportesTodos()">Todos</button>
     </div>
     <div class="tab-panel active" id="rtab-lista">
       <div class="tbl-bar" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
@@ -1345,6 +1402,43 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <select id="rf-urgencia" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff;margin-top:4px">
             <option>Ordinario</option><option>Urgente</option></select></div>
       </div>
+
+      <div id="rf-campos-equipos">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Equipo</label>
+            <input type="text" id="rf-eq-equipo" placeholder="Nombre/modelo del equipo" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Número de serie</label>
+            <input type="text" id="rf-eq-serie" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Tipo de servicio</label>
+            <select id="rf-eq-tiposervicio" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff;margin-top:4px">
+              <option>Instalación</option><option>Mantenimiento</option><option>Calibración</option><option>Retiro</option><option>Otro</option></select></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Estado del equipo</label>
+            <select id="rf-eq-estado" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff;margin-top:4px">
+              <option>Operando</option><option>En revisión</option><option>Fuera de servicio</option></select></div>
+        </div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Refacciones utilizadas</label>
+          <input type="text" id="rf-eq-refacciones" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+      </div>
+
+      <div id="rf-campos-servicios" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Tipo de servicio</label>
+            <select id="rf-sv-tiposervicio" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff;margin-top:4px">
+              <option>Capacitación</option><option>Asesoría técnica</option><option>Visita comercial</option><option>Otro</option></select></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Tema / asunto</label>
+            <input type="text" id="rf-sv-tema" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        </div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Participantes</label>
+          <input type="text" id="rf-sv-participantes" placeholder="Nombres o número de asistentes" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Recomendaciones</label>
+          <input type="text" id="rf-sv-recomendaciones" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+      </div>
+
+      <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Observaciones / trabajo realizado</label>
+        <textarea id="rf-observaciones" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px;min-height:70px;resize:vertical"></textarea></div>
+
       <div id="rf-asesor-wrap" style="margin-bottom:12px">
         <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Asesor responsable</label>
         <input type="text" id="rf-asesor" readonly style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#E9F1FA;margin-top:4px">
@@ -1354,7 +1448,24 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button onclick="guardarReporte()" style="padding:8px 16px;border-radius:8px;border:none;background:#1B3A6B;color:#fff;font-family:var(--font);font-weight:500;cursor:pointer">💾 Guardar reporte</button>
       </div>
     </div>
-    <div class="tab-panel" id="rtab-todos"></div>
+    <div class="tab-panel" id="rtab-todos">
+      <div class="tbl-bar" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <select class="fsel" id="rep-todos-filtro-asesor" onchange="renderReportesTodos()"><option value="">Todos los asesores</option></select>
+        <span class="results-label" id="rep-todos-count">0 reportes</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">FOLIO</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">TIPO</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">CLIENTE</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">ASESOR</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">FECHA</th>
+          <th style="padding:8px 10px;text-align:center;font-size:11px;color:var(--muted)">URGENCIA</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="rep-todos-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Sin reportes.</td></tr></tbody>
+      </table>
+    </div>
   </div>
 
   <div id="tab-forecast-wrap" class="tab-content" style="display:none;padding:16px">
@@ -1429,8 +1540,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </select>
       <select class="fsel" id="vh-asesor" onchange="vhFilter()">
         <option value="">Todos los asesores</option>
-        <option>José Carlos</option><option>Arturo</option><option>Jesús</option>
-        <option>Mary Tere</option><option>Daniel</option>
       </select>
       <div class="search-wrap" style="flex:1;min-width:160px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -3317,17 +3426,20 @@ const WF_CAMPOS = {
     {v:'dias_sin_contacto', l:'Días sin contacto'},
     {v:'etapa', l:'Etapa'},
     {v:'temperatura', l:'Temperatura'},
+    {v:'valor_cuenta', l:'Valor de cuenta (Bronce/Plata/Oro/Platino)'},
   ],
   clientes: [
     {v:'dias_para_vencer_pago', l:'Días para que venza el pago (negativo = ya vencido)'},
     {v:'cxc_pendiente', l:'Cuenta por cobrar pendiente (true/false)'},
+    {v:'valor_cuenta', l:'Valor de cuenta (Bronce/Plata/Oro/Platino)'},
   ]
 };
 function wfUpdateCampos(){
   const tabla = document.getElementById('wf-tabla')?.value || 'leads';
   const sel = document.getElementById('wf-campo');
-  if(!sel) return;
-  sel.innerHTML = WF_CAMPOS[tabla].map(c=>`<option value="${c.v}">${c.l}</option>`).join('');
+  const sel2 = document.getElementById('wf-campo2');
+  if(sel) sel.innerHTML = WF_CAMPOS[tabla].map(c=>`<option value="${c.v}">${c.l}</option>`).join('');
+  if(sel2) sel2.innerHTML = '<option value="">— Sin segunda condición —</option>' + WF_CAMPOS[tabla].map(c=>`<option value="${c.v}">${c.l}</option>`).join('');
 }
 async function wfCrearRegla(){
   const nombre = document.getElementById('wf-nombre').value.trim();
@@ -3335,11 +3447,18 @@ async function wfCrearRegla(){
   const campo = document.getElementById('wf-campo').value;
   const operador = document.getElementById('wf-operador').value;
   const valor = document.getElementById('wf-valor').value.trim();
+  const campo2 = document.getElementById('wf-campo2')?.value||'';
+  const operador2 = document.getElementById('wf-operador2')?.value||'';
+  const valor2 = document.getElementById('wf-valor2')?.value.trim()||'';
   const accion_mensaje = document.getElementById('wf-mensaje').value.trim();
   if(!nombre || !valor || !accion_mensaje){ showToast('Completa nombre, valor y mensaje','⚠️'); return; }
+  if(campo2 && !valor2){ showToast('Si eliges una segunda condición, indica también su valor','⚠️'); return; }
   try{
-    await sbPost('pmps_workflow_reglas', {nombre, tabla, campo, operador, valor, accion_mensaje, activa:true, creado_por: currentUser.nombre});
-    ['wf-nombre','wf-valor','wf-mensaje'].forEach(id=>document.getElementById(id).value='');
+    const data = {nombre, tabla, campo, operador, valor, accion_mensaje, activa:true, creado_por: currentUser.nombre};
+    if(campo2){ data.campo2=campo2; data.operador2=operador2; data.valor2=valor2 }
+    await sbPost('pmps_workflow_reglas', data);
+    ['wf-nombre','wf-valor','wf-mensaje','wf-valor2'].forEach(id=>{const el=document.getElementById(id); if(el) el.value=''});
+    const c2 = document.getElementById('wf-campo2'); if(c2) c2.value=''
     showToast('Regla creada ✓');
     renderWorkflow();
   }catch(e){ showToast('Error al crear regla: '+e.message,'⚠️'); }
@@ -3359,31 +3478,40 @@ async function wfEliminarRegla(id){
 function wfCampoLabel(tabla, campo){
   return (WF_CAMPOS[tabla]||[]).find(c=>c.v===campo)?.l || campo;
 }
-function wfCampoValor(regla, item){
+function wfCampoValor(regla, item, campoOverride){
+  const campo = campoOverride || regla.campo;
+  if(campo==='valor_cuenta') return item.tier || item.valor_cuenta || item.categoria || '';
   if(regla.tabla==='leads'){
-    if(regla.campo==='dias_sin_contacto') return diasDesde(item.ultimo_movimiento);
-    if(regla.campo==='etapa') return item.etapa;
-    if(regla.campo==='temperatura') return item.temperatura;
+    if(campo==='dias_sin_contacto') return diasDesde(item.ultimo_movimiento);
+    if(campo==='etapa') return item.etapa;
+    if(campo==='temperatura') return item.temperatura;
   } else {
     const ci = item.ciclo||{};
-    if(regla.campo==='dias_para_vencer_pago') return diasDesde(ci.pago_fecha_val);
-    if(regla.campo==='cxc_pendiente') return (ci.cxc && !ci.pago) ? 'true' : 'false';
+    if(campo==='dias_para_vencer_pago') return diasDesde(ci.pago_fecha_val);
+    if(campo==='cxc_pendiente') return (ci.cxc && !ci.pago) ? 'true' : 'false';
   }
   return undefined;
 }
-function wfCumple(regla, item){
-  const v = wfCampoValor(regla, item);
+function wfCompara(v, val, operador){
   if(v===undefined || v===null || v==='') return false;
-  const val = regla.valor;
   const numV = Number(v), numVal = Number(val);
   const esNumerico = !isNaN(numV) && !isNaN(numVal) && val!=='';
-  switch(regla.operador){
+  switch(operador){
     case '>=': return esNumerico ? numV >= numVal : String(v) >= String(val);
     case '<=': return esNumerico ? numV <= numVal : String(v) <= String(val);
     case '=':  return esNumerico ? numV === numVal : String(v).toLowerCase() === String(val).toLowerCase();
     case '!=': return esNumerico ? numV !== numVal : String(v).toLowerCase() !== String(val).toLowerCase();
     default: return false;
   }
+}
+function wfCumple(regla, item){
+  const cumple1 = wfCompara(wfCampoValor(regla, item), regla.valor, regla.operador);
+  if(!cumple1) return false;
+  if(regla.campo2){
+    const cumple2 = wfCompara(wfCampoValor(regla, item, regla.campo2), regla.valor2, regla.operador2);
+    if(!cumple2) return false;
+  }
+  return true;
 }
 let workflowReglas = [];
 async function renderWorkflow(){
@@ -3402,7 +3530,7 @@ async function renderWorkflow(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:220px">
           <div style="font-weight:700;font-size:14px;margin-bottom:4px">⚙️ ${esc(r.nombre)}</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:2px"><b>Condición:</b> ${r.tabla==='leads'?'Leads':'Clientes'} · ${wfCampoLabel(r.tabla,r.campo)} ${esc(r.operador)} ${esc(r.valor)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:2px"><b>Condición:</b> ${r.tabla==='leads'?'Leads':'Clientes'} · ${wfCampoLabel(r.tabla,r.campo)} ${esc(r.operador)} ${esc(r.valor)}${r.campo2?` <b>Y</b> ${wfCampoLabel(r.tabla,r.campo2)} ${esc(r.operador2)} ${esc(r.valor2)}`:''}</div>
           <div style="font-size:12px;color:var(--muted)"><b>Mensaje:</b> ${esc(r.accion_mensaje)}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
@@ -3435,7 +3563,7 @@ async function syncWorkflowNotificaciones(){
         jobs.push(sbRpc('crear_notificacion', {
           p_usuario: dest, p_tipo: `workflow_${r.id}`, p_titulo: r.nombre,
           p_mensaje: msg, p_origen_tabla: r.tabla, p_origen_id: String(m.id||m.empresa)
-        }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, r.nombre, msg) }));
+        }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, `${r.nombre} — ${m.empresa||''}`, msg) }));
       });
     }
     await Promise.allSettled(jobs);
@@ -3461,15 +3589,17 @@ async function renderActividad(){
   const empty = document.getElementById('actividad-empty');
   el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0">Cargando...</div>';
   const filtro = document.getElementById('actividad-filter-tabla')?.value || '';
-  let extra = '&order=creado_en.desc&limit=100';
+  let extra = '&order=created_at.desc&limit=100';
   if(filtro) extra += `&tabla=eq.${filtro}`;
-  const rows = await sbGet('pmps_activity_log','*',extra).catch(()=>[]);
+  const rows = await sbGet('pmps_activity_log','*',extra).catch((e)=>{console.error('Error cargando actividad:',e); return []});
   if(!rows.length){ el.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
   el.innerHTML = rows.map(r=>{
-    const fecha = new Date(r.creado_en).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'});
+    const fecha = new Date(r.created_at).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'});
     const accionBadge = r.accion==='insert'
       ? '<span style="background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:2px 8px;font-size:10.5px;font-weight:600">Creado</span>'
+      : r.accion==='delete'
+      ? '<span style="background:var(--red-bg,#FCEBEB);color:var(--red,#A32D2D);border-radius:6px;padding:2px 8px;font-size:10.5px;font-weight:600">Eliminado</span>'
       : '<span style="background:var(--amber-bg);color:var(--amber);border-radius:6px;padding:2px 8px;font-size:10.5px;font-weight:600">Editado</span>';
     return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--surface)">
       <div style="min-width:130px;font-size:11px;color:var(--muted);font-family:var(--mono)">${fecha}</div>
@@ -3479,7 +3609,7 @@ async function renderActividad(){
           <b style="font-size:12.5px">${ACTIVIDAD_LABELS[r.tabla]||r.tabla}</b>
           <span style="font-size:11.5px;color:var(--muted)">por ${r.usuario||'—'}</span>
         </div>
-        <div style="font-size:11.5px;color:var(--muted);word-break:break-word">${actividadResumenCampos(r.campos)}</div>
+        <div style="font-size:11.5px;color:var(--muted);word-break:break-word">${actividadResumenCampos(r.detalle)}</div>
       </div>
     </div>`;
   }).join('');
@@ -3616,7 +3746,7 @@ async function syncNotificaciones(leadsSinContacto, clientesCxc, clientesPagoVen
       jobs.push(sbRpc('crear_notificacion', {
         p_usuario: dest, p_tipo:'lead_frio', p_titulo:titulo,
         p_mensaje: msg, p_origen_tabla:'leads', p_origen_id: String(l.id||l.empresa)
-      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, titulo, msg) }))
+      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, `${titulo} — ${l.empresa||''}`, msg) }))
     })
     clientesCxc.forEach(c=>{
       const dest = c.responsable || 'Administrador'
@@ -3625,7 +3755,7 @@ async function syncNotificaciones(leadsSinContacto, clientesCxc, clientesPagoVen
       jobs.push(sbRpc('crear_notificacion', {
         p_usuario: dest, p_tipo:'cuenta_por_cobrar', p_titulo:titulo,
         p_mensaje: msg, p_origen_tabla:'clientes', p_origen_id: String(c.id||c.empresa)
-      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, titulo, msg) }))
+      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, `${titulo} — ${c.empresa||''}`, msg) }))
     })
     clientesPagoVence.forEach(c=>{
       const dest = c.responsable || 'Administrador'
@@ -3634,7 +3764,7 @@ async function syncNotificaciones(leadsSinContacto, clientesCxc, clientesPagoVen
       jobs.push(sbRpc('crear_notificacion', {
         p_usuario: dest, p_tipo:'pago_vence', p_titulo:titulo,
         p_mensaje: msg, p_origen_tabla:'clientes', p_origen_id: String(c.id||c.empresa)
-      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, titulo, msg) }))
+      }).then(esNueva=>{ if(esNueva) enviarCorreoNotificacion(dest, `${titulo} — ${c.empresa||''}`, msg) }))
     })
     await Promise.allSettled(jobs)
     renderNotifCampana()
@@ -4704,7 +4834,23 @@ function fcRenderGlobal(){
   if(!body) return
   const asesores = ['CORP','ASA','JGT','MTOS','ALYD','PACIFICO']
   const AV_C = AV_COLOR
-  body.innerHTML = asesores.map(a=>{
+  let resumenHTML = ''
+  if(mes){
+    const porProducto = {}
+    forecast_data.forEach(r=>{
+      const v = parseFloat(r[mes])||0
+      if(v<=0) return
+      porProducto[r.producto||'—'] = (porProducto[r.producto||'—']||0) + v
+    })
+    const filas = Object.entries(porProducto).sort((a,b)=>b[1]-a[1])
+    if(filas.length){
+      resumenHTML = `<div style="margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:8px;border:1px solid #B5D4F4">
+        <div style="font-size:12px;font-weight:600;color:#1B3A6B;margin-bottom:6px">📦 Total por producto — todos los territorios (${mes})</div>
+        ${filas.map(([p,v])=>`<div style="display:flex;gap:8px;padding:3px 0;border-bottom:0.5px solid var(--border)"><span style="font-size:11px;flex:1">${esc(p)}</span><span style="font-size:11px;font-weight:600;font-family:var(--mono)">${v.toLocaleString('es-MX')}</span></div>`).join('')}
+      </div>`
+    }
+  }
+  body.innerHTML = resumenHTML + asesores.map(a=>{
     let items = forecast_data.filter(r=>r.asesor_clave===a)
     if(soloDatos) items = items.filter(r=>MESES_FC.some(m=>parseFloat(r[m]||0)>0))
     if(!items.length) return ''
@@ -4750,6 +4896,22 @@ function fcRenderAsesor(clave, containerId){
   const checkId = `fc-solo-datos-${clave.toLowerCase()}`
   const soloDatos = document.getElementById(checkId)?.checked||false
   let items = forecast_data.filter(r=>r.asesor_clave===clave)
+  const nombreAsesor = items[0]?.asesor_nombre || clave
+  // Completar con productos del catálogo que aún no tienen fila para este asesor
+  if(typeof productos_cat!=='undefined' && productos_cat.length){
+    const nombresExistentes = new Set(items.map(r=>(r.producto||'').trim().toLowerCase()))
+    productos_cat.forEach(p=>{
+      const nombre = (p.nombre||'').trim()
+      if(!nombre || nombresExistentes.has(nombre.toLowerCase())) return
+      items.push({
+        id: 'new:'+p.id, asesor_clave: clave, asesor_nombre: nombreAsesor,
+        producto: nombre, codigo: p.clave||'',
+        enero:0,febrero:0,marzo:0,abril:0,mayo:0,junio:0,julio:0,agosto:0,septiembre:0,octubre:0,noviembre:0,diciembre:0,
+        _esNuevo: true
+      })
+    })
+    items.sort((a,b)=>(a.producto||'').localeCompare(b.producto||''))
+  }
   if(soloDatos) items = items.filter(r=>MESES_FC.some(m=>parseFloat(r[m]||0)>0))
   if(!items.length){ container.innerHTML='<div class="empty"><p>Sin datos para este asesor</p></div>'; return }
   const canEdit = currentUser.rol==='admin' || currentUser.nombre===items[0]?.asesor_nombre
@@ -4829,6 +4991,23 @@ function fcExportExcel(){
   exportModuloExcel('PMPS_Forecast_2026', 'Forecast', ['Asesor','Producto','Código',...MESES_LABEL,'Total'], rows)
 }
 function fcExportPDF(){
+  const mes = document.getElementById('fc-mes-sel')?.value||''
+  if(mes){
+    // Mes específico seleccionado: sumar por producto entre TODOS los asesores/territorios
+    const porProducto = {}
+    forecast_data.forEach(r=>{
+      const v = parseFloat(r[mes])||0
+      if(v<=0) return
+      const key = r.producto||'—'
+      porProducto[key] = (porProducto[key]||0) + v
+    })
+    const rows = Object.entries(porProducto).sort((a,b)=>b[1]-a[1]).map(([producto,total])=>[producto, total])
+    const granTotal = Object.values(porProducto).reduce((s,v)=>s+v,0)
+    rows.push(['TOTAL GENERAL', granTotal])
+    const mesLabel = mes.charAt(0).toUpperCase()+mes.slice(1)
+    exportModuloPDF(`Forecast 2026 — Vista global (${mesLabel})`, ['Producto','Total unidades'], rows)
+    return
+  }
   const porAsesor = {}
   forecast_data.forEach(r=>{
     const key = r.asesor_nombre||r.asesor_clave||''
@@ -4844,7 +5023,7 @@ function fcExportPDF(){
     granTotal += subtotal
   })
   rows.push(['', 'TOTAL GENERAL', granTotal])
-  exportModuloPDF('Forecast 2026 — Vista global', ['Asesor','Producto','Total'], rows)
+  exportModuloPDF('Forecast 2026 — Vista global (año completo)', ['Asesor','Producto','Total'], rows)
 }
 function fcExportExcelAsesor(clave){
   const items = forecast_data.filter(r=>r.asesor_clave===clave)
@@ -4864,18 +5043,37 @@ async function fcGuardarAsesor(clave){
   if(!cambios||Object.keys(cambios).length===0){ showToast('Sin cambios pendientes','ℹ️'); return }
   const btn = document.getElementById(`fc-save-${clave}`)
   if(btn){ btn.textContent='Guardando...'; btn.disabled=true }
-  let ok=0, err=0
+  let ok=0, err=0, huboNuevos=false
   for(const [id, meses] of Object.entries(cambios)){
     try {
-      await sbPatch('pmps_forecast_2026', id, {...meses, updated_at: new Date().toISOString()})
-      const idx = forecast_data.findIndex(r=>r.id==id)
-      if(idx>=0) Object.assign(forecast_data[idx], meses)
+      if(String(id).startsWith('new:')){
+        // Producto del catálogo sin fila previa para este asesor: crear la fila
+        const productoId = String(id).slice(4)
+        const p = productos_cat.find(x=>String(x.id)===productoId)
+        const nombreAsesor = forecast_data.find(r=>r.asesor_clave===clave)?.asesor_nombre || clave
+        const nuevaFila = {
+          asesor_clave: clave, asesor_nombre: nombreAsesor,
+          producto: p?.nombre||'', codigo: p?.clave||'',
+          ...meses, updated_at: new Date().toISOString()
+        }
+        const [creada] = await sbPost('pmps_forecast_2026', nuevaFila)
+        if(creada) forecast_data.push(creada)
+        huboNuevos = true
+      } else {
+        await sbPatch('pmps_forecast_2026', id, {...meses, updated_at: new Date().toISOString()})
+        const idx = forecast_data.findIndex(r=>r.id==id)
+        if(idx>=0) Object.assign(forecast_data[idx], meses)
+      }
       ok++
     } catch(e){ err++; console.error(e) }
   }
   delete fcPendientes[clave]
   if(btn){ btn.textContent='💾 Guardar cambios'; btn.disabled=false; btn.style.display='none' }
   fcRenderKpis()
+  if(huboNuevos){
+    const containerId = `fc-tabla-${clave.toLowerCase()}`
+    fcRenderAsesor(clave, containerId)
+  }
   if(err>0) showToast(`${ok} guardados, ${err} errores`,'⚠️')
   else showToast(`✅ ${ok} artículos guardados en Forecast`)
 }
@@ -5378,8 +5576,17 @@ async function loadCatalogo(){
   } catch(e){ showToast('Error cargando catálogo','⚠️') }
 }
 
+const CAT_FAMILIAS_BASE = ['Limpieza General','Limpieza CIP','Membranas','Cárnicos','Lácteos','Lavandería','Control Personal','Mantenimiento de Planta','Especialidades']
 function renderCatPills(){
-  const familias = [...new Set(productos_cat.map(p=>p.familia).filter(Boolean))]
+  const familias = [...new Set([...CAT_FAMILIAS_BASE, ...productos_cat.map(p=>p.familia).filter(Boolean)])].sort()
+  const selFam = document.getElementById('cat-familia')
+  if(selFam){
+    const prevVal = selFam.value
+    selFam.innerHTML = '<option value="">Todas las familias</option>' + familias.map(f=>`<option>${esc(f)}</option>`).join('')
+    selFam.value = familias.includes(prevVal) ? prevVal : ''
+  }
+  const datalist = document.getElementById('cat-familias-datalist')
+  if(datalist) datalist.innerHTML = familias.map(f=>`<option value="${esc(f)}">`).join('')
   const pills = document.getElementById('cat-pills-row')
   if(!pills) return
   pills.innerHTML = ['Todas',...familias].map(f=>`
@@ -5480,23 +5687,56 @@ let catEditingId = null
 function catOpenEdit(id){
   const p = productos_cat.find(x=>x.id==id); if(!p) return
   catEditingId = id
+  document.getElementById('cat-edit-clave').value = p.clave||''
   document.getElementById('cat-edit-nombre').value = p.nombre||''
   document.getElementById('cat-edit-familia').value = p.familia||''
   document.getElementById('cat-edit-uso').value = p.uso_dosificacion||''
   document.getElementById('cat-edit-descripcion').value = p.descripcion||''
   document.getElementById('modal-cat-edit').style.display = 'flex'
 }
+function catOpenNuevo(){
+  document.getElementById('cat-nuevo-clave').value = ''
+  document.getElementById('cat-nuevo-nombre').value = ''
+  document.getElementById('cat-nuevo-familia').value = ''
+  document.getElementById('cat-nuevo-uso').value = ''
+  document.getElementById('cat-nuevo-descripcion').value = ''
+  document.getElementById('modal-cat-nuevo').style.display = 'flex'
+}
+async function catSaveNuevo(){
+  const clave = document.getElementById('cat-nuevo-clave').value.trim()
+  const nombre = document.getElementById('cat-nuevo-nombre').value.trim()
+  const familia = document.getElementById('cat-nuevo-familia').value.trim()
+  const uso_dosificacion = document.getElementById('cat-nuevo-uso').value.trim()
+  const descripcion = document.getElementById('cat-nuevo-descripcion').value.trim()
+  if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
+  if(clave && productos_cat.some(p=>(p.clave||'').toLowerCase()===clave.toLowerCase())){
+    showToast('Ya existe un producto con esa clave','⚠️'); return
+  }
+  try {
+    const data = {nombre, familia, uso_dosificacion, descripcion}
+    if(clave) data.clave = clave
+    const [nuevo] = await sbPost('pmps_productos', data)
+    productos_cat.push(nuevo)
+    document.getElementById('modal-cat-nuevo').style.display = 'none'
+    renderCatPills(); catFilter()
+    showToast('Producto creado ✓')
+  } catch(e){ showToast('Error creando: '+e.message,'⚠️') }
+}
 async function catSaveEdit(){
   if(!catEditingId) return
+  const clave = document.getElementById('cat-edit-clave').value.trim()
   const nombre = document.getElementById('cat-edit-nombre').value.trim()
   const familia = document.getElementById('cat-edit-familia').value.trim()
   const uso_dosificacion = document.getElementById('cat-edit-uso').value.trim()
   const descripcion = document.getElementById('cat-edit-descripcion').value.trim()
   if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
+  if(clave && productos_cat.some(p=>p.id!=catEditingId && (p.clave||'').toLowerCase()===clave.toLowerCase())){
+    showToast('Ya existe otro producto con esa clave','⚠️'); return
+  }
   try {
-    await sbPatch('pmps_productos', catEditingId, {nombre, familia, uso_dosificacion, descripcion})
+    await sbPatch('pmps_productos', catEditingId, {clave, nombre, familia, uso_dosificacion, descripcion})
     const idx = productos_cat.findIndex(x=>x.id==catEditingId)
-    if(idx>=0) Object.assign(productos_cat[idx], {nombre, familia, uso_dosificacion, descripcion})
+    if(idx>=0) Object.assign(productos_cat[idx], {clave, nombre, familia, uso_dosificacion, descripcion})
     document.getElementById('modal-cat-edit').style.display = 'none'
     renderCatPills(); catFilter()
     showToast('Producto actualizado ✓')
@@ -5527,33 +5767,49 @@ function verProducto(id){
 // EQUIPOS EN COMODATO
 // ═══════════════════════════════════════════
 async function loadEquipos(){
-  if(equipos_data.length){ eqFilter(); return }
+  if(equipos_data.length){ eqPoblarEstados(); eqFilter(); return }
   try {
     equipos_data = await sbGet('pmps_equipos_comodato','*','&order=nombre.asc')
-    eqFilter()
+    eqPoblarEstados(); eqFilter()
   } catch(e){ showToast('Error cargando equipos','⚠️') }
 }
 
+function eqPoblarEstados(){
+  const sel = document.getElementById('eq-estado')
+  const datalist = document.getElementById('eq-estados-datalist')
+  const estados = [...new Set(equipos_data.map(e=>e.estado).filter(Boolean))].sort()
+  if(sel){
+    const prevVal = sel.value
+    sel.innerHTML = '<option value="">Todos los estados</option>' + estados.map(e=>`<option>${esc(e)}</option>`).join('')
+    sel.value = estados.includes(prevVal) ? prevVal : ''
+  }
+  if(datalist) datalist.innerHTML = estados.map(e=>`<option value="${esc(e)}">`).join('')
+}
+
+const EQ_ESTADO_COLOR = {'Disponible':{bg:'#E1F5EE',fg:'#085041'},'Sin stock':{bg:'#FCEBEB',fg:'#A32D2D'},'En revisión':{bg:'#FBF0DA',fg:'#7A5B00'}}
 function eqFilter(){
   const q = (document.getElementById('eq-search')?.value||'').toLowerCase()
-  const data = equipos_data.filter(e=>!q||e.nombre.toLowerCase().includes(q))
+  const estadoF = document.getElementById('eq-estado')?.value||''
+  const data = equipos_data.filter(e=>(!q||(e.nombre||'').toLowerCase().includes(q))&&(!estadoF||e.estado===estadoF))
   const countEl = document.getElementById('eq-count')
   if(countEl) countEl.textContent = data.length+' equipos'
   const tbody = document.getElementById('eq-tbody')
   if(!tbody) return
   if(!data.length){ tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">Sin equipos</td></tr>'; return }
   const esAdmin = currentUser?.rol==='admin'
-  tbody.innerHTML = data.map(e=>`
+  tbody.innerHTML = data.map(e=>{
+    const col = EQ_ESTADO_COLOR[e.estado]||{bg:'var(--surface2)',fg:'var(--muted)'}
+    return `
     <tr style="border-bottom:1px solid var(--border)">
       <td style="padding:6px 12px">${e.imagen_url?`<img src="${e.imagen_url}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">`:`<div style="width:36px;height:36px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:14px">🖼️</div>`}</td>
       <td style="padding:8px 12px;font-weight:500">${esc(e.nombre)}</td>
-      <td style="padding:8px 12px;font-size:11px;font-family:monospace;color:var(--muted)">${e.codigo_interno||e.codigo_microsip||'—'}</td>
+      <td style="padding:8px 12px;font-size:11px;font-family:monospace;color:var(--muted)">${esc(e.codigo_interno||'—')}</td>
       <td style="padding:8px 12px;font-size:12px">${esc(e.proveedor||'—')}</td>
       <td style="padding:8px 12px;font-size:12px;color:${e.ubicacion?'inherit':'var(--muted)'}">${esc(e.ubicacion||'—')}</td>
       <td style="padding:8px 12px;text-align:center">${e.stock_disponible||0}</td>
-      <td style="padding:8px 12px"><span style="padding:2px 8px;border-radius:99px;font-size:11px;background:#E1F5EE;color:#085041">Disponible</span></td>
+      <td style="padding:8px 12px"><span style="padding:2px 8px;border-radius:99px;font-size:11px;background:${col.bg};color:${col.fg}">${esc(e.estado||'—')}</span></td>
       <td style="padding:8px 12px;text-align:center">${esAdmin?`<span onclick="eqOpenEdit('${e.id}')" style="cursor:pointer" title="Editar">✏️</span>`:''}</td>
-    </tr>`).join('')
+    </tr>`}).join('')
 }
 
 let eqEditingId = null, eqFotoFile = null
@@ -5561,7 +5817,13 @@ function eqOpenEdit(id){
   const e = equipos_data.find(x=>String(x.id)===String(id)); if(!e) return
   eqEditingId = id
   eqFotoFile = null
+  document.getElementById('eq-edit-nombre').value = e.nombre||''
+  document.getElementById('eq-edit-codigo').value = e.codigo_interno||''
+  document.getElementById('eq-edit-proveedor').value = e.proveedor||''
   document.getElementById('eq-edit-ubicacion').value = e.ubicacion||''
+  document.getElementById('eq-edit-stock').value = e.stock_disponible||0
+  document.getElementById('eq-edit-estado').value = e.estado||''
+  document.getElementById('eq-edit-descripcion').value = e.descripcion||''
   document.getElementById('eq-edit-notas').value = e.notas||''
   const preview = document.getElementById('eq-edit-foto-preview')
   const placeholder = document.getElementById('eq-edit-foto-placeholder')
@@ -5598,13 +5860,21 @@ async function eqSaveEdit(){
       if(!upRes.ok) throw new Error('No se pudo subir la foto: '+await upRes.text())
       imagen_url = `${SB_URL}/storage/v1/object/public/equipos-fotos/${path}`
     }
+    const nombre = document.getElementById('eq-edit-nombre').value.trim()
+    const codigo_interno = document.getElementById('eq-edit-codigo').value.trim()
+    const proveedor = document.getElementById('eq-edit-proveedor').value.trim()
     const ubicacion = document.getElementById('eq-edit-ubicacion').value.trim()
+    const stock_disponible = parseFloat(document.getElementById('eq-edit-stock').value)||0
+    const estado = document.getElementById('eq-edit-estado').value.trim()
+    const descripcion = document.getElementById('eq-edit-descripcion').value.trim()
     const notas = document.getElementById('eq-edit-notas').value.trim()
-    await sbPatch('pmps_equipos_comodato', eqEditingId, { ubicacion, notas, imagen_url })
+    if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
+    const cambios = { nombre, codigo_interno, proveedor, ubicacion, stock_disponible, estado, descripcion, notas, imagen_url }
+    await sbPatch('pmps_equipos_comodato', eqEditingId, cambios)
     const idx = equipos_data.findIndex(x=>String(x.id)===String(eqEditingId))
-    if(idx>=0) equipos_data[idx] = { ...equipos_data[idx], ubicacion, notas, imagen_url }
+    if(idx>=0) equipos_data[idx] = { ...equipos_data[idx], ...cambios }
     document.getElementById('modal-eq-edit').style.display='none'
-    eqFilter()
+    eqPoblarEstados(); eqFilter()
     showToast('Equipo actualizado ✓')
   } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
@@ -5613,11 +5883,29 @@ async function eqSaveEdit(){
 // VENTAS HISTÓRICAS
 // ═══════════════════════════════════════════
 async function loadVentas(){
-  if(ventas_data.length){ renderVhKpis(); vhFilter(); return }
+  if(ventas_data.length){ renderVhKpis(); vhPoblarAsesores(); vhFilter(); return }
   try {
     ventas_data = await sbGet('pmps_ventas_historicas','*','&order=anio.desc,total.desc')
-    renderVhKpis(); vhFilter()
+    renderVhKpis(); vhPoblarAsesores(); vhFilter()
   } catch(e){ showToast('Error cargando ventas','⚠️') }
+}
+
+function vhPoblarAsesores(){
+  const sel = document.getElementById('vh-asesor')
+  if(!sel) return
+  const prevVal = sel.value
+  const asesores = [...new Set(ventas_data.map(r=>r.asesor_nombre).filter(Boolean))].sort()
+  sel.innerHTML = '<option value="">Todos los asesores</option>' + asesores.map(a=>`<option>${esc(a)}</option>`).join('')
+  sel.value = asesores.includes(prevVal) ? prevVal : ''
+}
+
+function vhGetFiltered(){
+  const anio = document.getElementById('vh-anio')?.value||''
+  const asesor = document.getElementById('vh-asesor')?.value||''
+  const q = (document.getElementById('vh-search')?.value||'').toLowerCase()
+  return ventas_data.filter(r=>
+    (!anio||r.anio==anio)&&(!asesor||r.asesor_nombre===asesor)&&(!q||(r.cliente||'').toLowerCase().includes(q))
+  )
 }
 
 function renderVhKpis(){
@@ -5632,12 +5920,7 @@ function renderVhKpis(){
 }
 
 function vhFilter(){
-  const anio = document.getElementById('vh-anio')?.value||''
-  const asesor = document.getElementById('vh-asesor')?.value||''
-  const q = (document.getElementById('vh-search')?.value||'').toLowerCase()
-  const data = ventas_data.filter(r=>
-    (!anio||r.anio==anio)&&(!asesor||r.asesor_nombre===asesor)&&(!q||r.cliente.toLowerCase().includes(q))
-  )
+  const data = vhGetFiltered()
   const countEl = document.getElementById('vh-count')
   if(countEl) countEl.textContent = data.length+' registros'
   const tbody = document.getElementById('vh-tbody')
@@ -5655,12 +5938,20 @@ function vhFilter(){
 }
 
 function vhExportExcel(){
-  const rows = ventas_data.map(r=>[r.cliente||'', r.asesor_nombre||'', r.anio||'', r.sector||r.estado||'', parseFloat(r.total||0)])
-  exportModuloExcel('PMPS_Ventas_Historicas', 'Ventas Hist.', ['Cliente','Asesor','Año','Sector','Total'], rows)
+  const data = vhGetFiltered()
+  const rows = data.map(r=>[r.cliente||'', r.asesor_nombre||'', r.anio||'', r.sector||r.estado||'', parseFloat(r.total||0)])
+  const anio = document.getElementById('vh-anio')?.value||''
+  exportModuloExcel('PMPS_Ventas_Historicas'+(anio?'_'+anio:''), 'Ventas Hist.', ['Cliente','Asesor','Año','Sector','Total'], rows)
 }
 function vhExportPDF(){
-  const rows = ventas_data.map(r=>[r.cliente||'', r.asesor_nombre||'', r.anio||'', fmtValor(parseFloat(r.total||0))])
-  exportModuloPDF('Ventas Históricas', ['Cliente','Asesor','Año','Total'], rows)
+  const data = vhGetFiltered()
+  const rows = data.map(r=>[r.cliente||'', r.asesor_nombre||'', r.anio||'', fmtValor(parseFloat(r.total||0))])
+  const anio = document.getElementById('vh-anio')?.value||''
+  const asesor = document.getElementById('vh-asesor')?.value||''
+  let titulo = 'Ventas Históricas'
+  if(anio) titulo += ` — ${anio}`
+  if(asesor) titulo += ` (${asesor})`
+  exportModuloPDF(titulo, ['Cliente','Asesor','Año','Total'], rows)
 }
 
 const VH_DIM_LABEL = {cliente:'Cliente', asesor_nombre:'Asesor', anio:'Año', sector:'Sector'}
@@ -5671,9 +5962,11 @@ function vhOpenGraficas(){
 }
 function vhRenderGrafica(){
   const dim = document.getElementById('vh-graf-dim').value
-  document.getElementById('vh-graf-title').textContent = `Ventas por ${VH_DIM_LABEL[dim]}`
+  const anio = document.getElementById('vh-anio')?.value||''
+  document.getElementById('vh-graf-title').textContent = `Ventas por ${VH_DIM_LABEL[dim]}` + (anio?` — ${anio}`:' — todos los años')
   const agg = {}
-  ventas_data.forEach(r=>{
+  const fuente = anio ? ventas_data.filter(r=>r.anio==anio) : ventas_data
+  fuente.forEach(r=>{
     const key = String(r[dim] ?? r.estado ?? 'Sin dato') || 'Sin dato'
     agg[key] = (agg[key]||0) + (parseFloat(r.total)||0)
   })
@@ -5756,21 +6049,8 @@ async function loadReportes(){
   } catch(e){ showToast('Error cargando reportes','⚠️') }
 }
 
-function repFilter(){
-  const tipo = document.getElementById('rep-filtro-tipo')?.value||''
-  const cli  = document.getElementById('rep-filtro-cli')?.value||''
-  const mes  = document.getElementById('rep-filtro-mes')?.value||''
-  const data = reportes_data.filter(r=>
-    (!tipo||r.tipo===tipo)&&(!cli||r.cliente===cli)&&
-    (!mes||new Date(r.fecha_servicio).getMonth()+1==mes)
-  )
-  const countEl = document.getElementById('rep-count')
-  if(countEl) countEl.textContent = data.length+' reportes'
-  const tbody = document.getElementById('rep-tbody')
-  if(!tbody) return
-  if(!data.length){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Sin reportes para este filtro.</td></tr>'; return }
-  tbody.innerHTML = data.map(r=>`
-    <tr style="border-bottom:1px solid var(--border)">
+function repFilaHTML(r){
+  return `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:7px 10px;font-family:monospace;font-size:11px">${r.folio||'—'}</td>
       <td style="padding:7px 10px;font-size:11px">${r.tipo||'—'}</td>
       <td style="padding:7px 10px;font-weight:500">${r.cliente||'—'}</td>
@@ -5778,15 +6058,53 @@ function repFilter(){
       <td style="padding:7px 10px;font-size:12px">${fmtFecha(r.fecha_servicio)}</td>
       <td style="padding:7px 10px;text-align:center"><span style="padding:2px 7px;border-radius:99px;font-size:10px;background:${r.urgencia==='Urgente'?'#FCEBEB':'var(--surface2)'};color:${r.urgencia==='Urgente'?'#A32D2D':'var(--muted)'}">${r.urgencia||'Ordinario'}</span></td>
       <td style="padding:7px 10px">
-        <button onclick="descargarPDF('${r.id}')" style="background:none;border:none;cursor:pointer;font-size:14px" title="PDF">📄</button>
+        <button onclick="descargarPDF('${r.id}')" style="background:none;border:none;cursor:pointer;font-size:14px" title="Ver / imprimir PDF">📄</button>
       </td>
-    </tr>`).join('')
+    </tr>`
+}
+
+function repFilter(){
+  const tipo = document.getElementById('rep-filtro-tipo')?.value||''
+  const cli  = document.getElementById('rep-filtro-cli')?.value||''
+  const mes  = document.getElementById('rep-filtro-mes')?.value||''
+  const soloMios = currentUser.rol!=='admin'
+  const data = reportes_data.filter(r=>
+    (!tipo||r.tipo===tipo)&&(!cli||r.cliente===cli)&&
+    (!mes||new Date(r.fecha_servicio).getMonth()+1==mes)&&
+    (!soloMios||r.asesor_nombre===currentUser.nombre)
+  )
+  const countEl = document.getElementById('rep-count')
+  if(countEl) countEl.textContent = data.length+' reportes'
+  const tbody = document.getElementById('rep-tbody')
+  if(!tbody) return
+  if(!data.length){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Sin reportes para este filtro.</td></tr>'; return }
+  tbody.innerHTML = data.map(repFilaHTML).join('')
+}
+
+function renderReportesTodos(){
+  const selA = document.getElementById('rep-todos-filtro-asesor')
+  if(selA && !selA.dataset.filled){
+    const asesores = [...new Set(reportes_data.map(r=>r.asesor_nombre).filter(Boolean))].sort()
+    selA.innerHTML = '<option value="">Todos los asesores</option>'+asesores.map(a=>`<option>${esc(a)}</option>`).join('')
+    selA.dataset.filled = '1'
+  }
+  const asesor = selA?.value||''
+  const data = reportes_data.filter(r=>!asesor||r.asesor_nombre===asesor)
+  const countEl = document.getElementById('rep-todos-count')
+  if(countEl) countEl.textContent = data.length+' reportes'
+  const tbody = document.getElementById('rep-todos-tbody')
+  if(!tbody) return
+  tbody.innerHTML = data.length ? data.map(repFilaHTML).join('') : '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Sin reportes.</td></tr>'
 }
 
 function selRepTipo(btn){
   repTipoActual = btn.dataset.tipo
   document.querySelectorAll('.rep-tipo-btn').forEach(b=>b.classList.remove('active'))
   btn.classList.add('active')
+  const eqWrap = document.getElementById('rf-campos-equipos')
+  const svWrap = document.getElementById('rf-campos-servicios')
+  if(eqWrap) eqWrap.style.display = repTipoActual==='equipos' ? 'block' : 'none'
+  if(svWrap) svWrap.style.display = repTipoActual==='servicios' ? 'block' : 'none'
 }
 
 async function guardarReporte(){
@@ -5795,12 +6113,26 @@ async function guardarReporte(){
   if(!cliente||!fecha){ showToast('Cliente y fecha son requeridos','⚠️'); return }
   const tipo = repTipoActual==='equipos'?'Reporte de Equipos':'Reporte de Servicios'
   const folio = (repTipoActual==='equipos'?'EQ':'SV')+'-'+Date.now().toString(36).toUpperCase()
+  const detalle = repTipoActual==='equipos' ? {
+    equipo: document.getElementById('rf-eq-equipo')?.value||'',
+    numero_serie: document.getElementById('rf-eq-serie')?.value||'',
+    tipo_servicio: document.getElementById('rf-eq-tiposervicio')?.value||'',
+    estado_equipo: document.getElementById('rf-eq-estado')?.value||'',
+    refacciones: document.getElementById('rf-eq-refacciones')?.value||'',
+  } : {
+    tipo_servicio: document.getElementById('rf-sv-tiposervicio')?.value||'',
+    tema: document.getElementById('rf-sv-tema')?.value||'',
+    participantes: document.getElementById('rf-sv-participantes')?.value||'',
+    recomendaciones: document.getElementById('rf-sv-recomendaciones')?.value||'',
+  }
   const data = {
     folio, tipo, cliente,
     responsable_cliente: document.getElementById('rf-responsable')?.value||'',
     fecha_servicio: fecha,
     urgencia: document.getElementById('rf-urgencia')?.value||'Ordinario',
     asesor_nombre: currentUser.nombre,
+    observaciones: document.getElementById('rf-observaciones')?.value||'',
+    detalle,
   }
   try {
     const res = await sbPost('pmps_reportes', data)
@@ -5813,12 +6145,33 @@ async function guardarReporte(){
 }
 
 function descargarPDF(id){
-  const r = reportes_data.find(x=>x.id===id); if(!r) return
+  const r = reportes_data.find(x=>String(x.id)===String(id)); if(!r) return
   const win = window.open('','_blank','width=800,height=900')
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${r.folio}</title>
-  <style>body{font-family:Arial,sans-serif;font-size:11px;padding:20px}h1{color:#1B3A6B}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px}</style></head>
-  <body><h1>PMPS® — ${r.tipo}</h1><p><strong>Folio:</strong> ${r.folio} | <strong>Cliente:</strong> ${r.cliente} | <strong>Fecha:</strong> ${fmtFecha(r.fecha_servicio)}</p>
-  <p><strong>Asesor:</strong> ${r.asesor_nombre} | <strong>Urgencia:</strong> ${r.urgencia}</p>
+  if(!win){ showToast('Tu navegador bloqueó la ventana. Permite pop-ups para este sitio para ver/imprimir el reporte.','⚠️'); return }
+  const d = r.detalle||{}
+  const detalleHTML = r.tipo==='Reporte de Equipos'
+    ? `<tr><td><strong>Equipo</strong></td><td>${esc(d.equipo||'—')}</td></tr>
+       <tr><td><strong>No. de serie</strong></td><td>${esc(d.numero_serie||'—')}</td></tr>
+       <tr><td><strong>Tipo de servicio</strong></td><td>${esc(d.tipo_servicio||'—')}</td></tr>
+       <tr><td><strong>Estado del equipo</strong></td><td>${esc(d.estado_equipo||'—')}</td></tr>
+       <tr><td><strong>Refacciones</strong></td><td>${esc(d.refacciones||'—')}</td></tr>`
+    : `<tr><td><strong>Tipo de servicio</strong></td><td>${esc(d.tipo_servicio||'—')}</td></tr>
+       <tr><td><strong>Tema</strong></td><td>${esc(d.tema||'—')}</td></tr>
+       <tr><td><strong>Participantes</strong></td><td>${esc(d.participantes||'—')}</td></tr>
+       <tr><td><strong>Recomendaciones</strong></td><td>${esc(d.recomendaciones||'—')}</td></tr>`
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(r.folio)}</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;padding:24px;color:#1C1A17}h1{color:#1B3A6B;font-size:16px}table{width:100%;border-collapse:collapse;margin-top:10px}td{border:1px solid #ddd;padding:6px 8px}td:first-child{width:180px;background:#EEF2F8}</style></head>
+  <body><h1>PMPS® — ${esc(r.tipo)}</h1>
+  <table>
+    <tr><td><strong>Folio</strong></td><td>${esc(r.folio)}</td></tr>
+    <tr><td><strong>Cliente</strong></td><td>${esc(r.cliente)}</td></tr>
+    <tr><td><strong>Responsable del cliente</strong></td><td>${esc(r.responsable_cliente||'—')}</td></tr>
+    <tr><td><strong>Fecha</strong></td><td>${fmtFecha(r.fecha_servicio)}</td></tr>
+    <tr><td><strong>Asesor</strong></td><td>${esc(r.asesor_nombre)}</td></tr>
+    <tr><td><strong>Urgencia</strong></td><td>${esc(r.urgencia)}</td></tr>
+    ${detalleHTML}
+    <tr><td><strong>Observaciones</strong></td><td>${esc(r.observaciones||'—')}</td></tr>
+  </table>
   <script>window.onload=()=>window.print()<\/script></body></html>`)
   win.document.close()
 }
@@ -5855,8 +6208,9 @@ async function loadDirectorio(){
     dirRenderTable()
     showToast(`Directorio cargado — ${dirAllData.length.toLocaleString()} prospectos ✓`)
   } catch(e){
-    if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Error cargando directorio. Verifica la conexión.</td></tr>`
-    showToast('Error cargando directorio','⚠️')
+    console.error('Error cargando directorio:', e)
+    if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Error cargando directorio: ${esc(e.message||'desconocido')}. Verifica la conexión.</td></tr>`
+    showToast('Error cargando directorio: '+(e.message||''),'⚠️')
   }
 }
 
@@ -6030,7 +6384,11 @@ function dirGoPage(p){
   dirRenderTable()
 }
 
-function dirExportCSV(){
+async function dirExportCSV(){
+  if(!dirFiltered.length && !dirAllData.length){
+    showToast('Cargando datos, un momento...','ℹ️')
+    await loadDirectorio()
+  }
   const data = dirFiltered
   if(!data.length){ showToast('No hay datos para exportar','⚠️'); return }
   const cols = ['id','nombre_establecimiento','razon_social','giro','sector','tier','facturacion_estimada','municipio','estado','zona_menlun','telefono','email','estatus','vendedor_asignado','notas']
