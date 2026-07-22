@@ -1898,7 +1898,7 @@ async function refrescarTodo(){
   if(btn) btn.disabled = true
   const vistaPrevia = {...lastActiveArea}
   try {
-    await cargarDatos() // leads/clientes (v1) — puede llevar al admin a su panel
+    await Promise.all([cargarDatos(), cargarConfig()]) // leads/clientes (v1) — puede llevar al admin a su panel
     const recargas = []
     if(nuevosCargados['catalogo']) recargas.push(loadCatalogo())
     if(nuevosCargados['equipos']) recargas.push(loadEquipos())
@@ -3635,30 +3635,46 @@ async function renderActividad(){
 }
 
 // ── AUTOMATIZACIONES (trigger → condición → acción) ──
-function autoRuleEnabled(id){
-  const v = localStorage.getItem('auto_rule_'+id);
-  return v===null ? true : v==='1';
-}
-function autoToggleRule(id){
-  const cur = autoRuleEnabled(id);
-  localStorage.setItem('auto_rule_'+id, cur?'0':'1');
-  renderAutomatizaciones();
+// Config compartida en Supabase (pmps_config) — la misma fuente que usa el cron del
+// servidor (run-automatizaciones), para que la app y el envío automático de correos
+// SIEMPRE estén de acuerdo en qué reglas están activas y con qué umbral.
+let CONFIG_CACHE = {};
+async function cargarConfig(){
+  try{
+    const rows = await sbGet('pmps_config','key,value','');
+    rows.forEach(r=>{ CONFIG_CACHE[r.key] = r.value; });
+  }catch(e){ console.error('No se pudo cargar la configuración', e); }
 }
 const AUTO_UMBRAL_DEFAULT = { 'leads-frios': 7, 'pago-vence': 3 };
+function autoRuleEnabled(id){
+  const v = CONFIG_CACHE['auto_enabled_'+id];
+  return v===undefined ? true : v==='1';
+}
+async function autoToggleRule(id){
+  const cur = autoRuleEnabled(id);
+  const nuevo = cur ? '0' : '1';
+  CONFIG_CACHE['auto_enabled_'+id] = nuevo; // optimista
+  renderAutomatizaciones();
+  try{ await sbSecureWrite('update','pmps_config',{key:'auto_enabled_'+id},{value:nuevo}); }
+  catch(e){ CONFIG_CACHE['auto_enabled_'+id] = cur?'1':'0'; showToast('No se pudo guardar el cambio','⚠️'); renderAutomatizaciones(); }
+}
 function autoGetUmbral(id){
-  const v = localStorage.getItem('auto_umbral_'+id);
-  const n = v!==null ? parseInt(v) : NaN;
+  const v = CONFIG_CACHE['umbral_'+id];
+  const n = v!==undefined ? parseInt(v) : NaN;
   return !isNaN(n) && n>0 ? n : AUTO_UMBRAL_DEFAULT[id];
 }
-function autoEditarUmbral(id){
+async function autoEditarUmbral(id){
   const actual = autoGetUmbral(id);
   const nuevo = prompt('¿Cada cuántos días quieres que se active esta regla?', actual);
   if(nuevo===null) return;
   const n = parseInt(nuevo);
   if(isNaN(n) || n<=0){ showToast('Ingresa un número de días válido','⚠️'); return; }
-  localStorage.setItem('auto_umbral_'+id, String(n));
-  showToast('Umbral actualizado ✓');
-  renderAutomatizaciones();
+  try{
+    await sbSecureWrite('update','pmps_config',{key:'umbral_'+id},{value:String(n)});
+    CONFIG_CACHE['umbral_'+id] = String(n);
+    showToast('Umbral actualizado ✓ (aplica también al envío automático de correos)');
+    renderAutomatizaciones();
+  }catch(e){ showToast('No se pudo guardar el umbral: '+e.message,'⚠️'); }
 }
 function autoUpdateBadge(){
   let n=0;
@@ -6557,6 +6573,7 @@ async function dirSaveModal(){
 
 // Boot: cargar usuarios reales ANTES de que alguien intente iniciar sesión
 initUsuarios()
+cargarConfig()
 
 // ── Restablecer contraseña: detecta el link que llega por correo ──────────
 // Supabase Auth redirige a esta misma app con #access_token=...&type=recovery
