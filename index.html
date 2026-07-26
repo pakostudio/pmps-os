@@ -966,7 +966,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
     <div class="g2">
       <div><label>Etapa</label>
-        <select id="nl-etapa">
+        <select id="nl-etapa" onchange="toggleBtnConvertirCliente()">
           <option>Prospecto</option><option>Contactado</option>
           <option>Propuesta</option><option>Negociación</option>
           <option>Cerrado ganado</option><option>Cerrado perdido</option>
@@ -985,6 +985,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </select>
     </div>
     <div><label>Notas iniciales</label><textarea id="nl-notas" placeholder="Contexto del prospecto..."></textarea></div>
+    <div id="lead-convertir-box" style="display:none;background:#F0F7F2;border:1px solid #BFE3CC;border-radius:8px;padding:10px 12px;margin-top:4px;font-size:12px;color:#1B4D2E">
+      Este lead está "Cerrado ganado". Puedes trasladarlo a la pestaña de Clientes con un clic, sin volver a capturar sus datos.
+      <button class="btn btn-sm" id="lead-btn-convertir" onclick="convertirLeadACliente()" style="margin-top:8px;background:#1B7A43">🔄 Convertir a cliente</button>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-sm" id="lead-btn-guardar" onclick="guardarLead()">Guardar lead</button>
       <button class="btn btn-sm btn-ghost" onclick="closeModal('modal-nuevo-lead')">Cancelar</button>
@@ -2272,7 +2276,22 @@ function abrirNuevoLead(){
   document.getElementById('nl-etapa').value = 'Prospecto';
   document.getElementById('nl-temp').value = '~ Tibio';
   document.getElementById('nl-fuente').value = '— Selecciona —';
+  leadEditandoConvertido = false;
+  toggleBtnConvertirCliente();
   openModal('modal-nuevo-lead');
+}
+
+// true si el lead que está abierto en el modal ya se convirtió a cliente (evita duplicados)
+let leadEditandoConvertido = false;
+
+// Muestra/oculta el botón "Convertir a cliente" según la etapa seleccionada y si ya se convirtió antes.
+// Solo aplica a leads ya existentes (con id) — un lead nuevo sin guardar no se puede convertir todavía.
+function toggleBtnConvertirCliente(){
+  const box = document.getElementById('lead-convertir-box');
+  const existId = document.getElementById('nl-id').value;
+  const etapa = document.getElementById('nl-etapa').value;
+  const mostrar = !!existId && etapa==='Cerrado ganado' && !leadEditandoConvertido;
+  box.style.display = mostrar ? 'block' : 'none';
 }
 
 function abrirEditarLead(id){
@@ -2291,7 +2310,51 @@ function abrirEditarLead(id){
   document.getElementById('nl-temp').value = l.temperatura||'~ Tibio';
   document.getElementById('nl-fuente').value = l.fuente||'— Selecciona —';
   document.getElementById('nl-notas').value = l.notas||'';
+  leadEditandoConvertido = !!l.convertido_cliente;
+  toggleBtnConvertirCliente();
   openModal('modal-nuevo-lead');
+}
+
+// Traslada un lead "Cerrado ganado" a la pestaña de Clientes, sin volver a capturar sus datos.
+// No borra ni modifica el lead original (salvo marcarlo como ya convertido, para no duplicar).
+async function convertirLeadACliente(){
+  const id = document.getElementById('nl-id').value;
+  const l = leads.find(x=>x.id===id);
+  if(!l){ showToast('No se encontró el lead','⚠️'); return; }
+  if(l.convertido_cliente){ showToast('Este lead ya se había convertido a cliente','⚠️'); return; }
+  if(!confirm(`¿Trasladar "${l.empresa}" a la pestaña de Clientes? Se creará un cliente nuevo con sus datos de contacto.`)) return;
+
+  const cliente = {
+    id: uid(),
+    empresa: l.empresa||'',
+    razon:'', rfc:'', web: l.web||'',
+    contacto: l.contacto||'', cargo:'',
+    telefono: l.telefono||'', whatsapp:'',
+    conmutador:'', ext:'',
+    email: l.email||'',
+    desde: hoy(),
+    servicio:'', proxima_cita:'', proximo_servicio:'', capacitacion:'',
+    notas: l.notas ? `Convertido desde lead. ${l.notas}` : 'Convertido desde lead.',
+    responsable: l.responsable || currentUser.name,
+    ultimo_contacto: hoy(),
+    ciclo: { cotizacion:false,cotizacion_fecha:'',odc:false,odc_fecha:'',factura:false,factura_fecha:'',factura_monto:'',pago_fecha:false,pago_fecha_val:'',cxc:false,pago:false,pago_val:'' },
+    seguimientos: []
+  };
+
+  setLoading(true, 'Convirtiendo a cliente...');
+  const r = await apiPost('upsert','clientes', cliente);
+  if(!r.ok){ setLoading(false); showToast('Error al crear el cliente: '+r.error,'⚠️'); return; }
+  clientes.push(cliente);
+
+  // Marcar el lead como ya convertido (no se borra, solo queda etiquetado para no duplicar)
+  l.convertido_cliente = true;
+  l.id_cliente_generado = cliente.id;
+  const r2 = await apiPost('upsert','prospectos', l);
+  setLoading(false);
+  if(!r2.ok){ showToast('Cliente creado, pero no se pudo marcar el lead como convertido: '+r2.error,'⚠️'); }
+  else { showToast(`"${cliente.empresa}" ahora es cliente ✓`); }
+  closeModal('modal-nuevo-lead');
+  renderAll();
 }
 
 async function guardarLead(){
@@ -2313,7 +2376,9 @@ async function guardarLead(){
     notas: document.getElementById('nl-notas').value.trim(),
     responsable: currentUser.name,
     ultimo_movimiento: hoy(),
-    seguimientos: existId ? (leads.find(l=>l.id===existId)?.seguimientos||[]) : []
+    seguimientos: existId ? (leads.find(l=>l.id===existId)?.seguimientos||[]) : [],
+    convertido_cliente: existId ? !!(leads.find(l=>l.id===existId)?.convertido_cliente) : false,
+    id_cliente_generado: existId ? (leads.find(l=>l.id===existId)?.id_cliente_generado||'') : ''
   };
 
   setLoading(true, 'Guardando lead...');
