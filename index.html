@@ -6392,7 +6392,7 @@ async function dirFetchAll(){
   let all = [], from = 0
   const batchSize = 1000
   while(true){
-    const batch = await sbGet('pmps_leads_menlun', DIR_COLS, `&order=id.asc&offset=${from}&limit=${batchSize}`)
+    const batch = await sbGet('pmps_directorio_prospectos', DIR_COLS, `&order=id.asc&offset=${from}&limit=${batchSize}`)
     if(!batch || !batch.length) break
     all = all.concat(batch)
     from += batchSize
@@ -6626,7 +6626,7 @@ async function dirSaveModal(){
   const vendedor = document.getElementById('dir-modal-vendedor').value
   const notas = document.getElementById('dir-modal-notas').value
   try {
-    await sbPatch('pmps_leads_menlun', dirEditingId, {estatus, vendedor_asignado: vendedor, notas})
+    await sbPatch('pmps_directorio_prospectos', dirEditingId, {estatus, vendedor_asignado: vendedor, notas})
     const idx = dirAllData.findIndex(x=>x.id==dirEditingId)
     if(idx>=0){ dirAllData[idx].estatus=estatus; dirAllData[idx].vendedor_asignado=vendedor; dirAllData[idx].notas=notas }
     document.getElementById('modal-dir').style.display = 'none'
