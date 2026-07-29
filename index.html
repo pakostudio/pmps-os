@@ -1797,6 +1797,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Vendedor asignado</label>
           <input type="text" id="dir-modal-vendedor" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px">
         </div>
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <div style="flex:1">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Tier</label>
+            <select id="dir-modal-tier" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff;margin-top:4px">
+              <option value="">—</option><option>Platino</option><option>Oro</option><option>Plata</option><option>Bronce</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Venta anual aprox.</label>
+            <input type="number" step="0.01" id="dir-modal-venta" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px">
+          </div>
+        </div>
         <div style="margin-bottom:4px">
           <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Notas</label>
           <textarea id="dir-modal-notas" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px;min-height:70px;resize:vertical"></textarea>
@@ -6105,7 +6117,16 @@ async function eqSaveEdit(){
     const proveedor = document.getElementById('eq-edit-proveedor').value.trim()
     const ubicacion = document.getElementById('eq-edit-ubicacion').value.trim()
     const stock_disponible = parseFloat(document.getElementById('eq-edit-stock').value)||0
-    const estado = document.getElementById('eq-edit-estado').value.trim()
+    let estado = document.getElementById('eq-edit-estado').value.trim()
+    // Auto-sincroniza el estado con el stock si el usuario no lo dejó en "En revisión"
+    // (evita el caso reportado: se actualiza el stock pero la etiqueta se queda en "Sin stock")
+    const eqOriginal = equipos_data.find(x=>String(x.id)===String(eqEditingId))
+    const estadoPrevio = (eqOriginal?.estado||'').trim()
+    if(estado !== 'En revisión'){
+      if(stock_disponible > 0 && estado !== 'Disponible') estado = 'Disponible'
+      else if(stock_disponible <= 0 && estado !== 'Sin stock') estado = 'Sin stock'
+    }
+    document.getElementById('eq-edit-estado').value = estado
     const descripcion = document.getElementById('eq-edit-descripcion').value.trim()
     const notas = document.getElementById('eq-edit-notas').value.trim()
     if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
@@ -6735,6 +6756,8 @@ function dirOpenModal(id){
   document.getElementById('dir-modal-tel').innerHTML = r.telefono ? `📞 ${esc(r.telefono)}${waBtn(r.telefono, `Hola, te contacto de PMPS Menlun respecto a ${r.nombre_establecimiento||r.razon_social||''}.`)}` : ''
   document.getElementById('dir-modal-estatus').value = r.estatus||'Nuevo'
   document.getElementById('dir-modal-vendedor').value = r.vendedor_asignado || (currentUser.rol!=='admin' ? currentUser.nombre : '')
+  document.getElementById('dir-modal-tier').value = r.tier||''
+  document.getElementById('dir-modal-venta').value = r.facturacion_estimada ?? ''
   document.getElementById('dir-modal-notas').value = r.notas||''
   document.getElementById('modal-dir').style.display = 'flex'
 }
@@ -6743,11 +6766,14 @@ async function dirSaveModal(){
   if(!dirEditingId) return
   const estatus = document.getElementById('dir-modal-estatus').value
   const vendedor = document.getElementById('dir-modal-vendedor').value
+  const tier = document.getElementById('dir-modal-tier').value
+  const ventaRaw = document.getElementById('dir-modal-venta').value
+  const facturacion_estimada = ventaRaw!=='' ? Number(ventaRaw) : null
   const notas = document.getElementById('dir-modal-notas').value
   try {
-    await sbPatch('pmps_directorio_prospectos', dirEditingId, {estatus, vendedor_asignado: vendedor, notas})
+    await sbPatch('pmps_directorio_prospectos', dirEditingId, {estatus, vendedor_asignado: vendedor, tier, facturacion_estimada, notas})
     const idx = dirAllData.findIndex(x=>x.id==dirEditingId)
-    if(idx>=0){ dirAllData[idx].estatus=estatus; dirAllData[idx].vendedor_asignado=vendedor; dirAllData[idx].notas=notas }
+    if(idx>=0){ Object.assign(dirAllData[idx], {estatus, vendedor_asignado: vendedor, tier, facturacion_estimada, notas}) }
     document.getElementById('modal-dir').style.display = 'none'
     dirRenderKpis(dirAllData)
     dirFilter()
