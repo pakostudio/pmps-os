@@ -704,7 +704,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
       <!-- TAB: KANBAN -->
       <div id="apanel-kanban" style="display:none">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Pipeline visual de todos los leads del equipo</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+          <div style="font-size:12px;color:var(--muted)">Pipeline visual de todos los leads del equipo</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:11px;color:var(--muted)">Ordenar por:</label>
+            <select id="admin-kanban-sort" onchange="renderAdminKanban()" style="font-size:11px;padding:4px 8px;border-radius:6px">
+              <option value="reciente">Movimiento reciente</option>
+              <option value="antiguo">Más antiguo (frío primero)</option>
+              <option value="valor_desc">Valor: mayor a menor</option>
+              <option value="valor_asc">Valor: menor a mayor</option>
+            </select>
+          </div>
+        </div>
         <div id="admin-kanban" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;overflow-x:auto;min-width:0"></div>
       </div>
 
@@ -1319,6 +1330,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   <datalist id="cat-familias-datalist"></datalist>
 
   <div id="tab-equipos-wrap" class="tab-content" style="display:none;padding:16px">
+    <div id="eq-totales-tipo" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:8px;border:1px solid #B5D4F4"></div>
     <div class="tbl-wrap">
       <div class="tbl-bar">
         <div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1326,6 +1338,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <select class="fsel" id="eq-estado" onchange="eqFilter()">
           <option value="">Todos los estados</option>
         </select>
+        <button onclick="eqToggleTotalesTipo()" id="btn-eq-totales" class="btn-export-xls" style="border-color:#B5D4F4">📊 Total por tipo</button>
         <span class="results-label" id="eq-count">— equipos</span>
       </div>
       <table style="width:100%;border-collapse:collapse">
@@ -4287,10 +4300,22 @@ function renderAdminKanban(){
   if(!el) return;
   const etapas = ['Prospecto','Contactado','Propuesta','Negociación','Cerrado ganado'];
   const colors = {'Prospecto':'#6C7F96','Contactado':'#185FA5','Propuesta':'#854F0B','Negociación':'#533AB7','Cerrado ganado':'#0F6E56'};
+  // Mismo filtro/orden que el Kanban de Reportes (JC Sprint 4 #12)
+  const sortMode = document.getElementById('admin-kanban-sort')?.value || 'reciente';
+  const sorters = {
+    reciente: (a,b)=> new Date(b.ultimo_movimiento||0) - new Date(a.ultimo_movimiento||0),
+    antiguo:  (a,b)=> new Date(a.ultimo_movimiento||0) - new Date(b.ultimo_movimiento||0),
+    valor_desc: (a,b)=> (parseFloat(b.valor||0)||0) - (parseFloat(a.valor||0)||0),
+    valor_asc:  (a,b)=> (parseFloat(a.valor||0)||0) - (parseFloat(b.valor||0)||0),
+  };
   el.innerHTML = etapas.map(etapa=>{
-    const etapaLeads = leads.filter(l=>l.etapa===etapa);
+    const etapaLeads = leads.filter(l=>l.etapa===etapa).slice().sort(sorters[sortMode]||sorters.reciente);
     const total = etapaLeads.reduce((s,l)=>s+(parseFloat(l.valor||0)||0),0);
-    return `<div style="background:var(--surface2);border-radius:10px;padding:10px;min-height:200px">
+    return `<div class="kanban-col" data-etapa="${etapa}"
+        ondragover="event.preventDefault();this.style.background='#E4F2FC'"
+        ondragleave="this.style.background='var(--surface2)'"
+        ondrop="kanbanDropLead(event,'${etapa}');renderAdminKanban()"
+        style="background:var(--surface2);border-radius:10px;padding:10px;min-height:200px;transition:background .15s">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ${colors[etapa]}">
         <div style="flex:1;font-size:12px;font-weight:600">${etapa}</div>
         <div style="background:${colors[etapa]};color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:600">${etapaLeads.length}</div>
@@ -4301,14 +4326,15 @@ function renderAdminKanban(){
         const ini = USERS_LIVE[l.responsable]?.initials||'?';
         const dias = diasDesde(l.ultimo_movimiento);
         const frio = dias>=7;
-        return `<div style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;border:1px solid ${frio?'#F09595':'var(--border)'}">
-          <div style="font-size:12px;font-weight:500;margin-bottom:4px">${l.empresa}</div>
+        return `<div draggable="true" ondragstart="kanbanDragStart(event,'${l.id}')"
+          style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;border:1px solid ${frio?'#F09595':'var(--border)'};cursor:grab">
+          <div style="font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.empresa)}</div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="display:flex;align-items:center;gap:4px">
               <div style="width:16px;height:16px;border-radius:50%;background:${col};color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600">${ini}</div>
               <span style="font-size:10px;color:var(--muted)">${fmtValor(l.valor)}</span>
             </div>
-            <span style="font-size:10px;color:${frio?'var(--red)':'var(--muted)'}">${dias===0?'Hoy':dias===1?'Ayer':dias+'d'}</span>
+            <span style="font-size:10px;font-weight:${frio?700:400};color:${frio?'var(--red)':'var(--muted)'}">${frio?'⚠️ ':''}${dias===0?'Hoy':dias===1?'Ayer':dias+'d'}</span>
           </div>
         </div>`;
       }).join('')}
@@ -6066,11 +6092,55 @@ function eqFilter(){
       <td style="padding:8px 12px;font-weight:500">${esc(e.nombre)}</td>
       <td style="padding:8px 12px;font-size:11px;font-family:monospace;color:var(--muted)">${esc(e.codigo_interno||'—')}</td>
       <td style="padding:8px 12px;font-size:12px">${esc(e.proveedor||'—')}</td>
-      <td style="padding:8px 12px;font-size:12px;color:${e.ubicacion?'inherit':'var(--muted)'}">${esc(e.ubicacion||'—')}</td>
+      <td style="padding:8px 12px;font-size:12px;color:${e.ubicacion?'inherit':'var(--muted)'}">${esc(e.ubicacion||'—')}${e.ubicacion?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.ubicacion)}" target="_blank" rel="noopener" title="Ver en Google Maps" style="margin-left:6px;text-decoration:none">📍</a>`:''}</td>
       <td style="padding:8px 12px;text-align:center">${e.stock_disponible||0}</td>
       <td style="padding:8px 12px"><span style="padding:2px 8px;border-radius:99px;font-size:11px;background:${col.bg};color:${col.fg}">${esc(e.estado||'—')}</span></td>
-      <td style="padding:8px 12px;text-align:center">${esAdmin?`<span onclick="eqOpenEdit('${e.id}')" style="cursor:pointer" title="Editar">✏️</span>`:''}</td>
+      <td style="padding:8px 12px;text-align:center;white-space:nowrap">
+        <span onclick="eqPrintLabel('${e.id}')" style="cursor:pointer;margin-right:8px" title="Imprimir etiqueta QR">🏷️</span>
+        ${esAdmin?`<span onclick="eqOpenEdit('${e.id}')" style="cursor:pointer" title="Editar">✏️</span>`:''}
+      </td>
     </tr>`}).join('')
+}
+
+function eqToggleTotalesTipo(){
+  const el = document.getElementById('eq-totales-tipo')
+  if(!el) return
+  if(el.style.display==='none'||!el.style.display){
+    const porTipo = {}
+    equipos_data.forEach(e=>{
+      const tipo = (e.nombre||'Sin nombre').trim()
+      if(!porTipo[tipo]) porTipo[tipo] = {cantidad:0, stock:0}
+      porTipo[tipo].cantidad += 1
+      porTipo[tipo].stock += parseFloat(e.stock_disponible)||0
+    })
+    const filas = Object.entries(porTipo).sort((a,b)=>b[1].cantidad-a[1].cantidad)
+    el.innerHTML = `<div style="font-size:12px;font-weight:600;color:#1B3A6B;margin-bottom:6px">📊 Cantidad total por tipo de equipo — todos los clientes</div>
+      ${filas.map(([tipo,v])=>`<div style="display:flex;gap:8px;padding:3px 0;border-bottom:0.5px solid var(--border)"><span style="font-size:11px;flex:1">${esc(tipo)}</span><span style="font-size:11px;color:var(--muted)">${v.cantidad} registro${v.cantidad===1?'':'s'}</span><span style="font-size:11px;font-weight:600;font-family:var(--mono)">${v.stock.toLocaleString('es-MX')} uds stock</span></div>`).join('')}`
+    el.style.display = 'block'
+  } else {
+    el.style.display = 'none'
+  }
+}
+
+function eqPrintLabel(id){
+  const e = equipos_data.find(x=>String(x.id)===String(id))
+  if(!e) return
+  const qrData = encodeURIComponent(`EQUIPO:${e.id}|${e.nombre||''}|${e.codigo_interno||''}|${e.ubicacion||''}`)
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${qrData}`
+  const win = window.open('', '_blank', 'width=380,height=520')
+  if(!win){ showToast('Habilita las ventanas emergentes para imprimir la etiqueta','⚠️'); return }
+  win.document.write(`<!DOCTYPE html><html><head><title>Etiqueta ${esc(e.nombre||'')}</title>
+    <style>body{font-family:sans-serif;text-align:center;padding:20px}img{margin:10px auto}
+    h2{font-size:15px;margin:8px 0 2px}p{font-size:12px;color:#555;margin:2px 0}
+    .cod{font-family:monospace;font-size:11px;color:#888;margin-top:6px}</style></head>
+    <body>
+      <img src="${qrUrl}" width="200" height="200">
+      <h2>${esc(e.nombre||'Equipo')}</h2>
+      <p>${esc(e.ubicacion||'')}</p>
+      <p class="cod">${esc(e.codigo_interno||'')}</p>
+      <` + `script>window.onload=()=>setTimeout(()=>window.print(),400)</` + `script>
+    </body></html>`)
+  win.document.close()
 }
 
 let eqEditingId = null, eqFotoFile = null
