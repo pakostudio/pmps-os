@@ -1288,12 +1288,37 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <input type="text" id="cat-edit-clave" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
         <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Nombre</label>
           <input type="text" id="cat-edit-nombre" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
-        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Familia</label>
-          <input type="text" id="cat-edit-familia" list="cat-familias-datalist" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Familia (hasta 3)</label>
+          <input type="text" id="cat-edit-familia" list="cat-familias-datalist" placeholder="Familia principal" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px">
+          <input type="text" id="cat-edit-familia2" list="cat-familias-datalist" placeholder="Familia adicional (opcional)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:6px">
+          <input type="text" id="cat-edit-familia3" list="cat-familias-datalist" placeholder="Familia adicional (opcional)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:6px">
+        </div>
         <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Uso / Dosificación</label>
           <input type="text" id="cat-edit-uso" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
-        <div style="margin-bottom:4px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Descripción</label>
+        <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Descripción</label>
           <textarea id="cat-edit-descripcion" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px;min-height:70px;resize:vertical"></textarea></div>
+        <div style="display:flex;gap:12px;margin-bottom:4px">
+          <div style="flex:1">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Imagen del producto</label>
+            <div style="margin-top:4px">
+              <img id="cat-edit-foto-preview" src="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none;margin-bottom:6px">
+              <label style="display:inline-block;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);font-size:12px;cursor:pointer">
+                📷 Subir imagen
+                <input type="file" accept="image/*" id="cat-edit-foto-input" style="display:none" onchange="catFotoSeleccionada(this)">
+              </label>
+            </div>
+          </div>
+          <div style="flex:1">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Ficha técnica (PDF)</label>
+            <div style="margin-top:4px">
+              <a id="cat-edit-ficha-link" href="#" target="_blank" style="display:none;font-size:11px;margin-bottom:6px;color:#1B3A6B">📄 Ver ficha actual</a>
+              <label style="display:inline-block;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);font-size:12px;cursor:pointer">
+                📎 Subir PDF
+                <input type="file" accept="application/pdf" id="cat-edit-ficha-input" style="display:none" onchange="catFichaSeleccionada(this)">
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
         <button onclick="document.getElementById('modal-cat-edit').style.display='none'" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
@@ -5862,8 +5887,10 @@ function catHomologBadge(nombre){
 }
 
 const CAT_FAMILIAS_BASE = ['Limpieza General','Limpieza CIP','Membranas','Cárnicos','Lácteos','Lavandería','Control Personal','Mantenimiento de Planta','Especialidades']
+function catFamiliasDe(p){ return [p.familia, p.familia_2, p.familia_3].filter(Boolean) }
 function renderCatPills(){
-  const familias = [...new Set([...CAT_FAMILIAS_BASE, ...productos_cat.map(p=>p.familia).filter(Boolean)])].sort()
+  const todasFamilias = productos_cat.flatMap(catFamiliasDe)
+  const familias = [...new Set([...CAT_FAMILIAS_BASE, ...todasFamilias])].sort()
   const selFam = document.getElementById('cat-familia')
   if(selFam){
     const prevVal = selFam.value
@@ -5914,7 +5941,7 @@ function catFilter(){
   const fam = document.getElementById('cat-familia')?.value||''
   const data = productos_cat.filter(p=>
     (!q || p.nombre.toLowerCase().includes(q) || (p.descripcion||'').toLowerCase().includes(q)) &&
-    (!fam || p.familia===fam)
+    (!fam || catFamiliasDe(p).includes(fam))
   )
   const countEl = document.getElementById('cat-count')
   if(countEl) countEl.textContent = data.length+' productos'
@@ -5929,7 +5956,7 @@ function catFilter(){
       return `<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="verProducto('${p.id}')">
         <td style="padding:7px 10px;font-family:var(--mono);font-size:11px;color:var(--muted)">${p.clave||'—'}</td>
         <td style="padding:7px 10px;font-weight:500">${p.nombre}</td>
-        <td style="padding:7px 10px"><span style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.03em">${p.familia||'—'}</span></td>
+        <td style="padding:7px 10px"><span style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.03em">${catFamiliasDe(p).join(' · ')||'—'}</span></td>
         <td style="padding:7px 10px;color:var(--muted)">${p.uso_dosificacion||'—'}</td>
         <td style="padding:7px 10px">${catHomologBadge(p.nombre)}</td>
         <td style="padding:7px 10px">${currentUser.rol==='admin'?`<button onclick="event.stopPropagation();catOpenEdit('${p.id}')" title="Editar" style="background:none;border:none;cursor:pointer;font-size:12px">✏️</button>`:''}</td>
@@ -5944,8 +5971,9 @@ function catFilter(){
     const color = CAT_COLORS[p.familia]||'#888'
     return `<div onclick="verProducto('${p.id}')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .15s"
       onmouseover="this.style.borderColor='${color}'" onmouseout="this.style.borderColor='var(--border)'">
+      ${p.imagen_url?`<img src="${p.imagen_url}" style="width:100%;height:110px;object-fit:cover;display:block">`:''}
       <div style="padding:12px 14px 8px;border-bottom:1px solid var(--border)">
-        <div style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">${p.familia||''}</div>
+        <div style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">${catFamiliasDe(p).join(' · ')}</div>
         <div style="font-size:13px;font-weight:500;line-height:1.3">${p.nombre}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:var(--mono)">${p.clave||''}</div>
         <div style="margin-top:6px">${catHomologBadge(p.nombre)}</div>
@@ -5953,6 +5981,7 @@ function catFilter(){
       <div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:11px;color:var(--muted)">${p.uso_dosificacion||'—'}</span>
         <span style="display:flex;align-items:center;gap:6px">
+          ${p.ficha_tecnica_url?`<a href="${p.ficha_tecnica_url}" target="_blank" onclick="event.stopPropagation()" title="Descargar ficha técnica" style="text-decoration:none;font-size:12px">📄</a>`:''}
           ${currentUser.rol==='admin'?`<button onclick="event.stopPropagation();catOpenEdit('${p.id}')" title="Editar" style="background:none;border:none;cursor:pointer;font-size:12px">✏️</button>`:''}
           <span style="font-size:11px;color:var(--muted)">HDT ›</span>
         </span>
@@ -5971,14 +6000,38 @@ function catExportPDF(){
 }
 
 let catEditingId = null
+let catFotoFile = null
+let catFichaFile = null
+function catFotoSeleccionada(input){
+  catFotoFile = input.files[0]||null
+  if(catFotoFile){
+    const preview = document.getElementById('cat-edit-foto-preview')
+    preview.src = URL.createObjectURL(catFotoFile)
+    preview.style.display = 'block'
+  }
+}
+function catFichaSeleccionada(input){
+  catFichaFile = input.files[0]||null
+  if(catFichaFile) showToast('PDF listo — se subirá al guardar')
+}
 function catOpenEdit(id){
   const p = productos_cat.find(x=>x.id==id); if(!p) return
   catEditingId = id
+  catFotoFile = null
+  catFichaFile = null
   document.getElementById('cat-edit-clave').value = p.clave||''
   document.getElementById('cat-edit-nombre').value = p.nombre||''
   document.getElementById('cat-edit-familia').value = p.familia||''
+  document.getElementById('cat-edit-familia2').value = p.familia_2||''
+  document.getElementById('cat-edit-familia3').value = p.familia_3||''
   document.getElementById('cat-edit-uso').value = p.uso_dosificacion||''
   document.getElementById('cat-edit-descripcion').value = p.descripcion||''
+  const preview = document.getElementById('cat-edit-foto-preview')
+  if(p.imagen_url){ preview.src = p.imagen_url; preview.style.display = 'block' } else { preview.style.display = 'none' }
+  const fichaLink = document.getElementById('cat-edit-ficha-link')
+  if(p.ficha_tecnica_url){ fichaLink.href = p.ficha_tecnica_url; fichaLink.style.display = 'inline-block' } else { fichaLink.style.display = 'none' }
+  document.getElementById('cat-edit-foto-input').value = ''
+  document.getElementById('cat-edit-ficha-input').value = ''
   document.getElementById('modal-cat-edit').style.display = 'flex'
 }
 function catOpenNuevo(){
@@ -6014,6 +6067,8 @@ async function catSaveEdit(){
   const clave = document.getElementById('cat-edit-clave').value.trim()
   const nombre = document.getElementById('cat-edit-nombre').value.trim()
   const familia = document.getElementById('cat-edit-familia').value.trim()
+  const familia_2 = document.getElementById('cat-edit-familia2').value.trim()
+  const familia_3 = document.getElementById('cat-edit-familia3').value.trim()
   const uso_dosificacion = document.getElementById('cat-edit-uso').value.trim()
   const descripcion = document.getElementById('cat-edit-descripcion').value.trim()
   if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
@@ -6021,9 +6076,33 @@ async function catSaveEdit(){
     showToast('Ya existe otro producto con esa clave','⚠️'); return
   }
   try {
-    await sbPatch('pmps_productos', catEditingId, {clave, nombre, familia, uso_dosificacion, descripcion})
+    let imagen_url = productos_cat.find(x=>x.id==catEditingId)?.imagen_url || null
+    let ficha_tecnica_url = productos_cat.find(x=>x.id==catEditingId)?.ficha_tecnica_url || null
+    if(catFotoFile){
+      const ext = (catFotoFile.name.split('.').pop()||'jpg')
+      const path = `producto-${catEditingId}-${Date.now()}.${ext}`
+      const upRes = await fetch(`${SB_URL}/storage/v1/object/productos-media/${path}`, {
+        method:'POST',
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': catFotoFile.type||'image/jpeg' },
+        body: catFotoFile
+      })
+      if(!upRes.ok) throw new Error('No se pudo subir la imagen: '+await upRes.text())
+      imagen_url = `${SB_URL}/storage/v1/object/public/productos-media/${path}`
+    }
+    if(catFichaFile){
+      const path = `ficha-${catEditingId}-${Date.now()}.pdf`
+      const upRes = await fetch(`${SB_URL}/storage/v1/object/productos-media/${path}`, {
+        method:'POST',
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/pdf' },
+        body: catFichaFile
+      })
+      if(!upRes.ok) throw new Error('No se pudo subir la ficha técnica: '+await upRes.text())
+      ficha_tecnica_url = `${SB_URL}/storage/v1/object/public/productos-media/${path}`
+    }
+    const cambios = {clave, nombre, familia, familia_2, familia_3, uso_dosificacion, descripcion, imagen_url, ficha_tecnica_url}
+    await sbPatch('pmps_productos', catEditingId, cambios)
     const idx = productos_cat.findIndex(x=>x.id==catEditingId)
-    if(idx>=0) Object.assign(productos_cat[idx], {clave, nombre, familia, uso_dosificacion, descripcion})
+    if(idx>=0) Object.assign(productos_cat[idx], cambios)
     document.getElementById('modal-cat-edit').style.display = 'none'
     renderCatPills(); catFilter()
     showToast('Producto actualizado ✓')
