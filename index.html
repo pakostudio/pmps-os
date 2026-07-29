@@ -1664,6 +1664,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <span title="Haz clic en cualquier celda de la columna REAL C'26 para editarla" style="font-size:14px;font-weight:700;color:#0F6E56;margin-left:8px;background:#E1F5EE;padding:3px 10px;border-radius:6px">✏️ Editable</span>
       </div>
       <div style="display:flex;gap:8px">
+        <input type="file" id="pres-import-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="presImportFile(event)">
+        <button onclick="document.getElementById('pres-import-file').click()" class="btn-export-xls" style="border-color:#B5D4F4;color:#1B3A6B" title="Importar formato MICROSIP mensual (Asesor, Mes, Real)">📥 Importar Excel</button>
         <button onclick="presExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
         <button onclick="presExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
         <button onclick="presOpenGraficas()" id="btn-pres-graficas" class="btn-export-xls" style="border-color:#B5D4F4">📊 Ver gráficas</button>
@@ -1682,7 +1684,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="tbl-wrap"><div class="tbl-bar"><div class="sec-title">Por asesor 2026 (PRESUP vs REAL)</div></div><div id="pres-asesores" style="padding:8px 16px"></div></div>
         <div class="tbl-wrap"><div class="tbl-bar"><div class="sec-title">Histórico anual</div></div><div id="pres-historico" style="padding:8px 16px"></div></div>
       </div>
-      <div class="tbl-wrap" style="margin-top:16px"><div class="tbl-bar"><div class="sec-title">Cumplimiento mensual — barras</div></div>
+      <div class="tbl-wrap" style="margin-top:16px"><div class="tbl-bar"><div class="sec-title" id="pres-graficas-titulo">Cumplimiento mensual — barras</div></div>
         <canvas id="pres-chart-mensual" style="max-height:280px;padding:12px"></canvas>
       </div>
     </div>
@@ -5057,17 +5059,18 @@ function fcRenderGlobal(){
   const asesores = ['CORP','ASA','JGT','MTOS','ALYD','PACIFICO']
   const AV_C = AV_COLOR
   let resumenHTML = ''
-  if(mes){
+  {
+    // Total por producto sumando TODOS los asesores/territorios — con mes específico o año completo (JC: "en EPR sí suma por producto")
     const porProducto = {}
     forecast_data.forEach(r=>{
-      const v = parseFloat(r[mes])||0
+      const v = mes ? (parseFloat(r[mes])||0) : fcTotal(r)
       if(v<=0) return
       porProducto[r.producto||'—'] = (porProducto[r.producto||'—']||0) + v
     })
     const filas = Object.entries(porProducto).sort((a,b)=>b[1]-a[1])
     if(filas.length){
       resumenHTML = `<div style="margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:8px;border:1px solid #B5D4F4">
-        <div style="font-size:12px;font-weight:600;color:#1B3A6B;margin-bottom:6px">📦 Total por producto — todos los territorios (${mes})</div>
+        <div style="font-size:12px;font-weight:600;color:#1B3A6B;margin-bottom:6px">📦 Total por producto — todos los territorios (${mes||'año completo'})</div>
         ${filas.map(([p,v])=>`<div style="display:flex;gap:8px;padding:3px 0;border-bottom:0.5px solid var(--border)"><span style="font-size:11px;flex:1">${esc(p)}</span><span style="font-size:11px;font-weight:600;font-family:var(--mono)">${v.toLocaleString('es-MX')}</span></div>`).join('')}
       </div>`
     }
@@ -5672,12 +5675,18 @@ function presRenderGraficaMensual(){
   const draw = () => {
     const ctx = document.getElementById('pres-chart-mensual')
     if(!ctx || typeof Chart === 'undefined') return
+    // Respeta la pestaña activa (General o el asesor específico) en vez de siempre mostrar la vista general
+    const esGeneral = presActiveSubtab==='general'
+    const fuente = esGeneral ? presupuesto_data : presupuesto_asesores_data.filter(r=>r.asesor_clave===presActiveSubtab)
+    const cfg = PRES_ASESORES_CFG.find(a=>a.clave===presActiveSubtab)
+    const tituloEl = document.getElementById('pres-graficas-titulo')
+    if(tituloEl) tituloEl.textContent = `Cumplimiento mensual — ${cfg?.nombre||'General'}`
     const presup = MESES_LABEL.map((_,i)=>{
-      const row = presupuesto_data.find(r=>r.mes===i+1)
+      const row = fuente.find(r=>r.mes===i+1)
       return row ? parseFloat(row.presup_c26)||0 : 0
     })
     const real = MESES_LABEL.map((_,i)=>{
-      const row = presupuesto_data.find(r=>r.mes===i+1)
+      const row = fuente.find(r=>r.mes===i+1)
       return row ? parseFloat(row.real_c26)||0 : 0
     })
     if(presChartInstance) presChartInstance.destroy()
@@ -6242,6 +6251,84 @@ async function vhImportFile(evt){
       evt.target.value = '';
     }
   });
+}
+
+// Import Excel MICROSIP mensual para Presupuesto (JC Sprint 3 #7) — mismo patrón que vhImportFile
+const PRES_IMPORT_ALIASES = {
+  asesor: ['asesor','vendedor','asesor_clave','clave','agente'],
+  mes: ['mes','month','periodo','período'],
+  presup: ['presupuesto',"presup c'26",'presup_c26','presupuesto c26','meta'],
+  real: ['real',"real c'26",'real_c26','ventas','venta real','importe'],
+}
+const PRES_MESES_NOMBRE = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12}
+function presParseMes(v){
+  if(v===null||v===undefined||v==='') return null
+  if(typeof v==='number') return (v>=1&&v<=12) ? v : null
+  const n = parseInt(v); if(!isNaN(n) && n>=1 && n<=12) return n
+  const norm = String(v).toLowerCase().trim()
+  return PRES_MESES_NOMBRE[norm] || null
+}
+async function presImportFile(evt){
+  const file = evt.target.files[0]
+  if(!file) return
+  if(currentUser.rol!=='admin'){ showToast('Solo un administrador puede importar datos','⚠️'); evt.target.value=''; return }
+  loadXLSXLib(async ()=>{
+    try{
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(buf, {type:'array'})
+      const sheet = wb.Sheets[wb.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''})
+      if(!rows.length){ showToast('El archivo está vacío','⚠️'); evt.target.value=''; return }
+      const headers = rows[0]
+      const iAsesor = vhMatchCol(headers, PRES_IMPORT_ALIASES.asesor)
+      const iMes = vhMatchCol(headers, PRES_IMPORT_ALIASES.mes)
+      const iPresup = vhMatchCol(headers, PRES_IMPORT_ALIASES.presup)
+      const iReal = vhMatchCol(headers, PRES_IMPORT_ALIASES.real)
+      if(iAsesor<0 || iMes<0 || (iPresup<0 && iReal<0)){
+        showToast('No se reconocen las columnas Asesor/Mes/Presupuesto-Real en el archivo','⚠️')
+        evt.target.value=''; return
+      }
+      const clavesValidas = PRES_ASESORES_CFG.filter(a=>a.clave!=='general').map(a=>a.clave)
+      const parsed = rows.slice(1).map(r=>{
+        const asesorRaw = String(r[iAsesor]||'').trim().toUpperCase()
+        const cfg = PRES_ASESORES_CFG.find(a=>a.clave===asesorRaw || a.nombre.toUpperCase()===asesorRaw)
+        return {
+          asesor_clave: cfg?.clave || asesorRaw,
+          asesor_nombre: cfg?.nombre || asesorRaw,
+          mes: presParseMes(r[iMes]),
+          presup_c26: iPresup>=0 ? vhParseNumero(r[iPresup]) : null,
+          real_c26: iReal>=0 ? vhParseNumero(r[iReal]) : null,
+        }
+      }).filter(r=>r.asesor_clave && r.mes && clavesValidas.includes(r.asesor_clave))
+      if(!parsed.length){ showToast('No se encontraron filas válidas (revisa que el asesor coincida con uno existente)','⚠️'); evt.target.value=''; return }
+      if(!confirm(`Se importarán ${parsed.length} registros de presupuesto (formato MICROSIP mensual). ¿Continuar?`)){ evt.target.value=''; return }
+      showToast(`Importando ${parsed.length} registros…`,'⏳')
+      let creados=0, actualizados=0, errores=0
+      for(const row of parsed){
+        try{
+          const existente = presupuesto_asesores_data.find(v=>v.asesor_clave===row.asesor_clave && v.mes===row.mes)
+          const cambios = {}
+          if(row.presup_c26!==null && !isNaN(row.presup_c26)) cambios.presup_c26 = row.presup_c26
+          if(row.real_c26!==null && !isNaN(row.real_c26)) cambios.real_c26 = row.real_c26
+          if(existente){
+            await sbSecureWrite('update','pmps_presupuesto_asesores',{id:existente.id},{...cambios, updated_at: new Date().toISOString()})
+            Object.assign(existente, cambios)
+            actualizados++
+          } else {
+            const [nuevo] = await sbPost('pmps_presupuesto_asesores', {asesor_clave:row.asesor_clave, asesor_nombre:row.asesor_nombre, mes:row.mes, ...cambios})
+            if(nuevo) presupuesto_asesores_data.push(nuevo)
+            creados++
+          }
+        } catch(e){ errores++ }
+      }
+      renderPresupuesto()
+      showToast(`Importación completa: ${creados} nuevos, ${actualizados} actualizados${errores?`, ${errores} con error`:''}`, errores?'⚠️':'✓')
+    } catch(e){
+      showToast('Error al leer el archivo: '+(e.message||''),'⚠️')
+    } finally {
+      evt.target.value = ''
+    }
+  })
 }
 
 function vhGetFiltered(){
