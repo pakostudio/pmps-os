@@ -1028,6 +1028,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button class="canal-btn" data-canal="Contratipo" onclick="selCanal(this,'seg-canales')">
         🧪 Desarrollo contratipo
       </button>
+      <button class="canal-btn" data-canal="Muestra" onclick="selCanal(this,'seg-canales')">
+        📦 Muestra enviada
+      </button>
     </div>
     <div id="seg-contratipo-box" style="display:none;background:#F0F7F2;border:1px solid #BFE3CC;border-radius:8px;padding:10px 12px;margin-bottom:12px">
       <div style="font-size:12px;color:#1B4D2E;margin-bottom:8px">Se enviará una solicitud a Control de Calidad (Luis Viramontes) para desarrollar un producto equivalente al que indiques.</div>
@@ -1035,6 +1038,22 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div><label>Producto de referencia (marca a igualar)</label><input type="text" id="seg-ct-producto" placeholder="Ej. Marca X, línea Y..."></div>
         <div><label>Industria / aplicación</label><input type="text" id="seg-ct-industria" placeholder="Ej. Lavandería industrial..."></div>
       </div>
+    </div>
+    <div id="seg-muestra-box" style="display:none;background:#EEF3FA;border:1px solid #C6D9EF;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:12px;color:#0C447C;margin-bottom:8px">Esta confirmación alimenta el widget de demanda anticipada de Producción.</div>
+      <div style="margin-bottom:10px"><label>Producto de la muestra</label><input type="text" id="seg-ms-producto" placeholder="Nombre del producto enviado"></div>
+      <div class="g2">
+        <div>
+          <label>¿El cliente confirmó pedido real?</label>
+          <select id="seg-ms-confirmado">
+            <option value="pendiente">Pendiente de confirmar</option>
+            <option value="si">Sí, confirmó</option>
+            <option value="no">No, no comprará</option>
+          </select>
+        </div>
+        <div><label>Cantidad estimada (kg/unidades)</label><input type="number" step="any" id="seg-ms-cantidad" placeholder="Ej. 200"></div>
+      </div>
+      <div style="margin-top:10px"><label>Fecha estimada del pedido</label><input type="date" id="seg-ms-fecha"></div>
     </div>
     <label>¿Qué se habló? <span id="seg-resumen-label-extra" style="font-weight:400;color:var(--muted)"></span></label>
     <textarea id="seg-resumen" placeholder="Resumen del contacto..."></textarea>
@@ -1238,6 +1257,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">NOMBRE</th>
           <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">FAMILIA</th>
           <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">USO/DOSIFICACIÓN</th>
+          <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)" title="Estatus de producción/homologación">PRODUCCIÓN</th>
           <th></th>
         </tr></thead>
         <tbody id="cat-tbody"></tbody>
@@ -2274,11 +2294,15 @@ function selCanal(btn, groupId){
   if(groupId==='seg-canales') toggleSegContratipoBox()
 }
 function toggleSegContratipoBox(){
-  const esContratipo = document.querySelector('#seg-canales .canal-btn.active')?.dataset.canal === 'Contratipo'
+  const canalActivo = document.querySelector('#seg-canales .canal-btn.active')?.dataset.canal
+  const esContratipo = canalActivo === 'Contratipo'
+  const esMuestra = canalActivo === 'Muestra'
   const box = document.getElementById('seg-contratipo-box')
+  const boxMuestra = document.getElementById('seg-muestra-box')
   const labelExtra = document.getElementById('seg-resumen-label-extra')
   if(box) box.style.display = esContratipo ? 'block' : 'none'
-  if(labelExtra) labelExtra.textContent = esContratipo ? '(detalle de la solicitud)' : ''
+  if(boxMuestra) boxMuestra.style.display = esMuestra ? 'block' : 'none'
+  if(labelExtra) labelExtra.textContent = esContratipo ? '(detalle de la solicitud)' : (esMuestra ? '(notas de la muestra)' : '')
 }
 function toggleCard(id){ document.getElementById(id)?.classList.toggle('open'); }
 
@@ -2492,6 +2516,10 @@ function abrirSeg(id, tipo, empresa){
   document.getElementById('seg-fecha').value='';
   const ctProducto = document.getElementById('seg-ct-producto'); if(ctProducto) ctProducto.value=''
   const ctIndustria = document.getElementById('seg-ct-industria'); if(ctIndustria) ctIndustria.value=''
+  const msProducto = document.getElementById('seg-ms-producto'); if(msProducto) msProducto.value=''
+  const msConfirmado = document.getElementById('seg-ms-confirmado'); if(msConfirmado) msConfirmado.value='pendiente'
+  const msCantidad = document.getElementById('seg-ms-cantidad'); if(msCantidad) msCantidad.value=''
+  const msFecha = document.getElementById('seg-ms-fecha'); if(msFecha) msFecha.value=''
   document.querySelectorAll('#seg-canales .canal-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   toggleSegContratipoBox();
   openModal('modal-seg');
@@ -2542,6 +2570,25 @@ async function guardarSeguimiento(){
     } catch(e){
       console.error('Error enviando contratipo a Calidad:', e);
       showToast('Seguimiento guardado, pero no se pudo notificar a Calidad: '+(e.message||''),'⚠️');
+    }
+  }
+
+  if(canal==='Muestra'){
+    try {
+      const cantidadRaw = document.getElementById('seg-ms-cantidad')?.value
+      await sbRpc('crm_v2_registrar_confirmacion_muestra', {
+        p_cliente: empresa,
+        p_vendedor: currentUser?.nombre || currentUser?.name || '',
+        p_producto: document.getElementById('seg-ms-producto')?.value.trim() || null,
+        p_confirmado: document.getElementById('seg-ms-confirmado')?.value || 'pendiente',
+        p_fecha_estimada: document.getElementById('seg-ms-fecha')?.value || null,
+        p_cantidad_estimada: cantidadRaw ? Number(cantidadRaw) : null,
+        p_notas: seg.resumen || null
+      });
+      showToast('Muestra registrada — Producción recibirá la demanda anticipada ✓');
+    } catch(e){
+      console.error('Error registrando confirmación de muestra:', e);
+      showToast('Seguimiento guardado, pero no se pudo notificar a Producción: '+(e.message||''),'⚠️');
     }
   }
 
@@ -5735,8 +5782,36 @@ async function loadCatalogo(){
   if(productos_cat.length){ renderCatPills(); catFilter(); return }
   try {
     productos_cat = await sbGet('pmps_productos','*','&order=nombre.asc')
+    await cargarHomologacion()
     renderCatPills(); catFilter()
   } catch(e){ showToast('Error cargando catálogo','⚠️') }
+}
+
+// ── Semáforo de autorización/homologación (ERP MENLUN, produccion_homologacion) ──
+// Cruza por nombre de producto normalizado. Solo informativo — nunca bloquea al vendedor.
+let homolMap = {}
+async function cargarHomologacion(){
+  try {
+    const rows = await sbGet('menlun_produccion_homologacion','producto,estatus')
+    homolMap = {}
+    ;(rows||[]).forEach(r=>{ if(r.producto) homolMap[r.producto.trim().toLowerCase()] = r.estatus })
+  } catch(e){
+    console.error('No se pudo cargar homologación de producción:', e)
+    homolMap = {}
+  }
+}
+const HOMOL_BADGES = {
+  'ok': {label:'Autorizado', bg:'#EAF3DE', col:'#27500A'},
+  'revisar': {label:'Revisar', bg:'#FAEEDA', col:'#633806'},
+  'revisar_falta_forecast': {label:'Revisar (sin forecast)', bg:'#FAEEDA', col:'#633806'},
+  'riesgo_no_autorizado': {label:'No autorizado', bg:'#FCE7E7', col:'#8C1A1A'},
+  'riesgo_sin_formula': {label:'Sin fórmula', bg:'#FCE7E7', col:'#8C1A1A'}
+}
+function catHomologBadge(nombre){
+  const key = (nombre||'').trim().toLowerCase()
+  const estatus = homolMap[key]
+  const b = HOMOL_BADGES[estatus] || {label:'—', bg:'#EEEFF1', col:'#6C7F96'}
+  return `<span title="Estatus de producción/homologación" style="padding:2px 9px;border-radius:99px;font-size:10px;font-weight:500;background:${b.bg};color:${b.col};white-space:nowrap">${b.label}</span>`
 }
 
 const CAT_FAMILIAS_BASE = ['Limpieza General','Limpieza CIP','Membranas','Cárnicos','Lácteos','Lavandería','Control Personal','Mantenimiento de Planta','Especialidades']
@@ -5809,9 +5884,10 @@ function catFilter(){
         <td style="padding:7px 10px;font-weight:500">${p.nombre}</td>
         <td style="padding:7px 10px"><span style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.03em">${p.familia||'—'}</span></td>
         <td style="padding:7px 10px;color:var(--muted)">${p.uso_dosificacion||'—'}</td>
+        <td style="padding:7px 10px">${catHomologBadge(p.nombre)}</td>
         <td style="padding:7px 10px">${currentUser.rol==='admin'?`<button onclick="event.stopPropagation();catOpenEdit('${p.id}')" title="Editar" style="background:none;border:none;cursor:pointer;font-size:12px">✏️</button>`:''}</td>
       </tr>`
-    }).join('') || `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados</td></tr>`
+    }).join('') || `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados</td></tr>`
     return
   }
 
@@ -5825,6 +5901,7 @@ function catFilter(){
         <div style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">${p.familia||''}</div>
         <div style="font-size:13px;font-weight:500;line-height:1.3">${p.nombre}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:var(--mono)">${p.clave||''}</div>
+        <div style="margin-top:6px">${catHomologBadge(p.nombre)}</div>
       </div>
       <div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:11px;color:var(--muted)">${p.uso_dosificacion||'—'}</span>
