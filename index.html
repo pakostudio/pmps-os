@@ -1002,6 +1002,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div class="modal-title" id="seg-title">Registrar seguimiento</div>
     <input type="hidden" id="seg-id">
     <input type="hidden" id="seg-tipo">
+    <input type="hidden" id="seg-empresa">
     <label>Canal de contacto</label>
     <div class="canal-group" id="seg-canales">
       <button class="canal-btn active" data-canal="Llamada" onclick="selCanal(this,'seg-canales')">
@@ -1024,8 +1025,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
         Video
       </button>
+      <button class="canal-btn" data-canal="Contratipo" onclick="selCanal(this,'seg-canales')">
+        🧪 Desarrollo contratipo
+      </button>
     </div>
-    <label>¿Qué se habló?</label>
+    <div id="seg-contratipo-box" style="display:none;background:#F0F7F2;border:1px solid #BFE3CC;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:12px;color:#1B4D2E;margin-bottom:8px">Se enviará una solicitud a Control de Calidad (Luis Viramontes) para desarrollar un producto equivalente al que indiques.</div>
+      <div class="g2">
+        <div><label>Producto de referencia (marca a igualar)</label><input type="text" id="seg-ct-producto" placeholder="Ej. Marca X, línea Y..."></div>
+        <div><label>Industria / aplicación</label><input type="text" id="seg-ct-industria" placeholder="Ej. Lavandería industrial..."></div>
+      </div>
+    </div>
+    <label>¿Qué se habló? <span id="seg-resumen-label-extra" style="font-weight:400;color:var(--muted)"></span></label>
     <textarea id="seg-resumen" placeholder="Resumen del contacto..."></textarea>
     <div class="g2">
       <div><label>Próxima acción</label><input type="text" id="seg-accion" placeholder="Enviar cotización, llamar..."></div>
@@ -2260,6 +2271,14 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{
 function selCanal(btn, groupId){
   document.querySelectorAll(`#${groupId} .canal-btn`).forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  if(groupId==='seg-canales') toggleSegContratipoBox()
+}
+function toggleSegContratipoBox(){
+  const esContratipo = document.querySelector('#seg-canales .canal-btn.active')?.dataset.canal === 'Contratipo'
+  const box = document.getElementById('seg-contratipo-box')
+  const labelExtra = document.getElementById('seg-resumen-label-extra')
+  if(box) box.style.display = esContratipo ? 'block' : 'none'
+  if(labelExtra) labelExtra.textContent = esContratipo ? '(detalle de la solicitud)' : ''
 }
 function toggleCard(id){ document.getElementById(id)?.classList.toggle('open'); }
 
@@ -2466,17 +2485,22 @@ function renderLeads(filtro=''){
 function abrirSeg(id, tipo, empresa){
   document.getElementById('seg-id').value = id;
   document.getElementById('seg-tipo').value = tipo;
+  document.getElementById('seg-empresa').value = empresa||'';
   document.getElementById('seg-title').textContent = 'Seguimiento — '+empresa;
   document.getElementById('seg-resumen').value='';
   document.getElementById('seg-accion').value='';
   document.getElementById('seg-fecha').value='';
+  const ctProducto = document.getElementById('seg-ct-producto'); if(ctProducto) ctProducto.value=''
+  const ctIndustria = document.getElementById('seg-ct-industria'); if(ctIndustria) ctIndustria.value=''
   document.querySelectorAll('#seg-canales .canal-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  toggleSegContratipoBox();
   openModal('modal-seg');
 }
 
 async function guardarSeguimiento(){
   const id = document.getElementById('seg-id').value;
   const tipo = document.getElementById('seg-tipo').value;
+  const empresa = document.getElementById('seg-empresa').value||'';
   const canal = document.querySelector('#seg-canales .canal-btn.active')?.dataset.canal||'Llamada';
   const seg = {
     canal, creado: hoy(),
@@ -2503,6 +2527,24 @@ async function guardarSeguimiento(){
     c.ultimo_contacto=hoy();
     await apiPost('upsert','clientes',c);
   }
+
+  if(canal==='Contratipo'){
+    try {
+      await sbRpc('crm_v2_registrar_contratipo', {
+        p_cliente: empresa,
+        p_vendedor: currentUser?.nombre || currentUser?.name || '',
+        p_producto_referencia: document.getElementById('seg-ct-producto')?.value.trim() || null,
+        p_industria: document.getElementById('seg-ct-industria')?.value.trim() || null,
+        p_aplicacion: document.getElementById('seg-ct-industria')?.value.trim() || null,
+        p_detalle: seg.resumen || null
+      });
+      showToast('Solicitud de contratipo enviada a Calidad ✓');
+    } catch(e){
+      console.error('Error enviando contratipo a Calidad:', e);
+      showToast('Seguimiento guardado, pero no se pudo notificar a Calidad: '+(e.message||''),'⚠️');
+    }
+  }
+
   setSyncStatus('✓ Guardado');
   showToast('Seguimiento registrado');
   setLoading(false); renderAll();
