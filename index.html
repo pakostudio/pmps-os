@@ -1551,9 +1551,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button class="tab-btn active" onclick="switchTab2(this,'fc-global')">Vista global</button>
       <button class="tab-btn" onclick="switchTab2(this,'fc-corp');if(forecast_data.length)fcRenderAsesor('CORP','fc-tabla-corp')">José Carlos</button>
       <button class="tab-btn" onclick="switchTab2(this,'fc-asa');if(forecast_data.length)fcRenderAsesor('ASA','fc-tabla-asa')">Arturo</button>
-      <button class="tab-btn" onclick="switchTab2(this,'fc-jgt');if(forecast_data.length)fcRenderAsesor('JGT','fc-tabla-jgt')">Jesús</button>
-      <button class="tab-btn" onclick="switchTab2(this,'fc-mtos');if(forecast_data.length)fcRenderAsesor('MTOS','fc-tabla-mtos')">Mary Tere</button>
-      <button class="tab-btn" onclick="switchTab2(this,'fc-alyd');if(forecast_data.length)fcRenderAsesor('ALYD','fc-tabla-alyd')">ALyD</button>
+      <button class="tab-btn" onclick="switchTab2(this,'fc-vend1');if(forecast_data.length)fcRenderAsesor('VEND1','fc-tabla-vend1')">Jorge Ojeda</button>
+      <button class="tab-btn" onclick="switchTab2(this,'fc-vend2');if(forecast_data.length)fcRenderAsesor('VEND2','fc-tabla-vend2')">Asesor Nuevo</button>
       <button class="tab-btn" onclick="switchTab2(this,'fc-pacifico');if(forecast_data.length)fcRenderAsesor('PACIFICO','fc-tabla-pacifico')">Pacífico</button>
     </div>
     <div class="tab-panel active" id="fc-global">
@@ -1586,20 +1585,15 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <input type="checkbox" id="fc-solo-datos-asa" onchange="fcRenderAsesor('ASA','fc-tabla-asa')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
       <div id="fc-tabla-asa"></div>
     </div>
-    <div class="tab-panel" id="fc-jgt">
+    <div class="tab-panel" id="fc-vend1">
       <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:8px 0;font-weight:normal;text-transform:none;letter-spacing:0">
-        <input type="checkbox" id="fc-solo-datos-jgt" onchange="fcRenderAsesor('JGT','fc-tabla-jgt')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
-      <div id="fc-tabla-jgt"></div>
+        <input type="checkbox" id="fc-solo-datos-vend1" onchange="fcRenderAsesor('VEND1','fc-tabla-vend1')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
+      <div id="fc-tabla-vend1"></div>
     </div>
-    <div class="tab-panel" id="fc-mtos">
+    <div class="tab-panel" id="fc-vend2">
       <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:8px 0;font-weight:normal;text-transform:none;letter-spacing:0">
-        <input type="checkbox" id="fc-solo-datos-mtos" onchange="fcRenderAsesor('MTOS','fc-tabla-mtos')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
-      <div id="fc-tabla-mtos"></div>
-    </div>
-    <div class="tab-panel" id="fc-alyd">
-      <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:8px 0;font-weight:normal;text-transform:none;letter-spacing:0">
-        <input type="checkbox" id="fc-solo-datos-alyd" onchange="fcRenderAsesor('ALYD','fc-tabla-alyd')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
-      <div id="fc-tabla-alyd"></div>
+        <input type="checkbox" id="fc-solo-datos-vend2" onchange="fcRenderAsesor('VEND2','fc-tabla-vend2')" style="width:14px;height:14px;margin:0"> Solo artículos con datos</label>
+      <div id="fc-tabla-vend2"></div>
     </div>
     <div class="tab-panel" id="fc-pacifico">
       <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:8px 0;font-weight:normal;text-transform:none;letter-spacing:0">
@@ -5033,7 +5027,8 @@ function switchTab2(btn, panelId){
 const AV_COLOR = {
   'José Carlos':'#1B2A4A','Arturo':'#854F0B','Jesús':'#3B6D11',
   'Mary Tere':'#534AB7','Daniel':'#A32D2D','Sin asignar':'#888',
-  'Administrador':'#1B2A4A','Ma. Teresa':'#534AB7'
+  'Administrador':'#1B2A4A','Ma. Teresa':'#534AB7',
+  'Jorge Ojeda':'#3B6D11','Asesor Nuevo':'#534AB7'
 }
 
 const MESES_FC = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
@@ -5044,9 +5039,8 @@ const PRES_ASESORES_CFG = [
   {clave:'general', nombre:'General (todo Menlun)'},
   {clave:'CORPORATIVOS', nombre:'Corporativos'},
   {clave:'ARTURO', nombre:'Arturo Salazar'},
-  {clave:'TERESA', nombre:'Maria Teresa'},
-  {clave:'JESUS', nombre:'Jesus Garcia'},
-  {clave:'ASESOR_LD', nombre:'Asesor LD'},
+  {clave:'VEND1', nombre:'Jorge Ojeda'},
+  {clave:'VEND2', nombre:'Asesor Nuevo'},
   {clave:'PACIFICO', nombre:'Pacífico'},
   {clave:'DISTRIBUIDOR', nombre:'Distribuidor'},
 ]
@@ -5079,9 +5073,8 @@ async function loadForecast(){
     fcRenderGlobal()
     fcRenderAsesor('CORP','fc-tabla-corp')
     fcRenderAsesor('ASA','fc-tabla-asa')
-    fcRenderAsesor('JGT','fc-tabla-jgt')
-    fcRenderAsesor('MTOS','fc-tabla-mtos')
-    fcRenderAsesor('ALYD','fc-tabla-alyd')
+    fcRenderAsesor('VEND1','fc-tabla-vend1')
+    fcRenderAsesor('VEND2','fc-tabla-vend2')
     fcRenderAsesor('PACIFICO','fc-tabla-pacifico')
   } catch(e){ showToast('Error cargando forecast','⚠️') }
   setLoading(false)
@@ -5090,7 +5083,7 @@ async function loadForecast(){
 function fcTotal(r){ return MESES_FC.reduce((s,m)=>s+(parseFloat(r[m])||0),0) }
 
 function fcRenderKpis(){
-  const asesores = ['CORP','ASA','JGT','MTOS','ALYD','PACIFICO']
+  const asesores = ['CORP','ASA','VEND1','VEND2','PACIFICO']
   const kpis = document.getElementById('fc-kpis')
   if(!kpis) return
   kpis.innerHTML = asesores.map(a=>{
@@ -5107,7 +5100,7 @@ function fcRenderGlobal(){
   const soloDatos = document.getElementById('fc-solo-datos')?.checked||false
   const body = document.getElementById('fc-global-body')
   if(!body) return
-  const asesores = ['CORP','ASA','JGT','MTOS','ALYD','PACIFICO']
+  const asesores = ['CORP','ASA','VEND1','VEND2','PACIFICO']
   const AV_C = AV_COLOR
   let resumenHTML = ''
   {
