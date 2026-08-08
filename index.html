@@ -5651,7 +5651,7 @@ function renderPresupuesto(){
       </tbody>
     </table></div>`
 
-  const coloresAsesor = {CORPORATIVOS:'#1a3a6b',ARTURO:'#854F0B',TERESA:'#534AB7',JESUS:'#3B6D11',ASESOR_LD:'#A32D2D',PACIFICO:'#0E7C86',DISTRIBUIDOR:'#888'}
+    const coloresAsesor = {CORPORATIVOS:'#1a3a6b',ARTURO:'#854F0B',VEND1:'#534AB7',VEND2:'#3B6D11',PACIFICO:'#0E7C86',DISTRIBUIDOR:'#888'}
   const asesores = PRES_ASESORES_CFG.filter(a=>a.clave!=='general').map(a=>{
     const rows = presupuesto_asesores_data.filter(r=>r.asesor_clave===a.clave)
     return {n:a.nombre, total: rows.reduce((s,r)=>s+(parseFloat(r.real_c26)||0),0), color: coloresAsesor[a.clave]||'#888'}
