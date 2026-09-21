@@ -7010,7 +7010,142 @@ async function dirSaveModal(){
   } catch(e){ showToast('Error al guardar: '+e.message,'⚠️') }
 }
 
-// Boot: cargar usuarios reales ANTES de que alguien intente iniciar sesión
+// MOZART SEARCH ENGINE — reemplaza buscador DENUE
+    const MOZ_URL = 'https://mozart-inteligencia-comercial.vercel.app/api/external/search'
+    const MOZ_KEY = 'moz_svc_a5e5d69794d3c8c2183e03cac7bd9530d0364ef809aa4de3'
+    let mozResults = [], mozTotal = 0, mozSearchTimer = null
+    
+    function mozLoadEstados(){
+        const estados = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','CDMX','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas']
+        const sel = document.getElementById('dir-estado')
+        if(!sel) return
+        sel.innerHTML = '<option value="">Todos los estados</option>' + estados.map(e=>`<option>${e}</option>`).join('')
+    }
+    
+    async function mozSearch(){
+        const q = document.getElementById('dir-search')?.value||''
+        const estadoSel = document.getElementById('dir-estado')?.value||''
+        const tbody = document.getElementById('dir-tbody')
+        if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Buscando en Mozart...</td></tr>`
+        try {
+              const body = { query: q, limit: 100, offset: 0 }
+              if(estadoSel) body.estados = [estadoSel]
+              const res = await fetch(MOZ_URL, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'x-api-key': MOZ_KEY },
+                      body: JSON.stringify(body)
+              })
+              if(!res.ok) throw new Error('HTTP '+res.status)
+              const data = await res.json()
+              mozResults = data.results || []
+              mozTotal = data.total || mozResults.length
+              dirPage = 1
+              mozRenderKpis(data)
+              mozRenderTable()
+              showToast(`Mozart: ${mozTotal.toLocaleString('es-MX')} prospectos encontrados`)
+        } catch(e){
+              console.error('Error buscando en Mozart:', e)
+              if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Error consultando Mozart: ${esc(e.message||'desconocido')}</td></tr>`
+              showToast('Error consultando Mozart: '+(e.message||''))
+        }
+    }
+    
+    function mozRenderKpis(data){
+        const kpis = document.getElementById('dir-kpis')
+        if(!kpis) return
+        const f = data.fuentes || {}
+        kpis.innerHTML = `
+            <div class="kpi"><div class="kpi-n" style="font-size:22px">${(data.total||0).toLocaleString('es-MX')}</div><div class="kpi-l">Resultados Mozart</div></div>
+                <div class="kpi"><div class="kpi-n" style="font-size:22px;color:#185FA5">${(f.empresarial||0).toLocaleString('es-MX')}</div><div class="kpi-l">Base empresarial</div></div>
+                    <div class="kpi"><div class="kpi-n" style="font-size:22px;color:#854F0B">${(f.donatarias||0).toLocaleString('es-MX')}</div><div class="kpi-l">Donatarias SAT</div></div>`
+    }
+    
+    function mozScoreBadge(s){
+        const score = s||0
+        const bg = score>=70 ? '#EAF3DE' : score>=40 ? '#FAEEDA' : '#FAECE7'
+        const col = score>=70 ? '#27500A' : score>=40 ? '#633806' : '#4A1B0C'
+        return `<span style="padding:2px 9px;border-radius:99px;font-size:11px;font-weight:500;background:${bg};color:${col}">${score}</span>`
+    }
+    
+    function mozRenderTable(){
+        const countEl = document.getElementById('dir-count')
+        if(countEl) countEl.textContent = mozTotal.toLocaleString('es-MX')+' resultados'
+        const tbody = document.getElementById('dir-tbody')
+        if(!tbody) return
+        if(!mozResults.length){
+              tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados</td></tr>`
+              return
+        }
+        tbody.innerHTML = mozResults.map((r,idx)=>`
+            <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:7px 10px;font-weight:500;font-size:12px">${esc(r.empresa||'-')}</td>
+                        <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.contacto||'-')}</td>
+                              <td style="padding:7px 10px;font-size:11px">${esc(r.sector||'-')}</td>
+                                    <td style="padding:7px 10px">${mozScoreBadge(r.score)}</td>
+                                          <td style="padding:7px 10px;font-size:12px">${esc(r.ciudad||'-')}</td>
+                                                <td style="padding:7px 10px;font-size:12px">${esc(r.estado||'-')}</td>
+                                                      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.fuente||'-')}</td>
+                                                            <td style="padding:7px 10px;font-size:11px">${esc(r.telefono||'-')}</td>
+                                                                  <td style="padding:7px 10px;font-size:11px;color:var(--muted)">-</td>
+                                                                        <td style="padding:7px 10px" id="moz-assign-${idx}"><button onclick="mozAssign(${idx})" style="background:#1B3A6B;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px">+ Asignar a mi cartera</button></td>
+                                                                            </tr>`).join('')
+    }
+    
+    async function mozAssign(idx){
+      const r = mozResults[idx]
+      if(!r) return
+      const cell = document.getElementById(`moz-assign-${idx}`)
+      try {
+        const payload = {
+          mozart_id: r.id,
+          nombre_establecimiento: r.empresa || null,
+          razon_social: r.empresa || null,
+          sector: r.sector || null,
+          giro: r.subsector || null,
+          municipio: r.ciudad || null,
+          estado: r.estado || null,
+          telefono: r.telefono || null,
+          email: r.email || null,
+          contacto: r.contacto || null,
+          cargo: r.cargo || null,
+          rfc: r.rfc || null,
+          score: r.score ?? null,
+          fuente: r.fuente || 'Mozart',
+          estatus: 'Nuevo',
+          vendedor_asignado: currentUser?.nombre || null
+        }
+        await sbPost('pmps_directorio_prospectos', payload)
+        if(cell) cell.innerHTML = `<span style="color:#27500A;font-size:11px;font-weight:500">Asignado</span>`
+        showToast(`${r.empresa} agregado a tu cartera`)
+      } catch(e){
+        const msg = (e.message||'').toLowerCase()
+        if(msg.includes('duplicate') || msg.includes('23505')){
+          if(cell) cell.innerHTML = `<span style="color:var(--muted);font-size:11px">Ya en el CRM</span>`
+          showToast('Este lead ya estaba en el CRM')
+        } else {
+          showToast('Error al asignar: '+(e.message||''))
+          console.error(e)
+        }
+      }
+    }
+    
+    function dirFilter(){
+      clearTimeout(mozSearchTimer)
+      mozSearchTimer = setTimeout(mozSearch, 400)
+    }
+    
+    function dirClearFilters(){
+      const el = document.getElementById('dir-search'); if(el) el.value=''
+      const es = document.getElementById('dir-estado'); if(es) es.value=''
+      mozSearch()
+    }
+    
+    async function loadDirectorio(){
+      mozLoadEstados()
+      await mozSearch()
+    }
+    
+    // Boot: cargar usuarios reales ANTES de que alguien intente iniciar sesión
 initUsuarios()
 cargarConfig()
 
