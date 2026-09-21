@@ -5966,7 +5966,7 @@ function catFilter(){
       onmouseover="this.style.borderColor='${color}'" onmouseout="this.style.borderColor='var(--border)'">
       ${p.imagen_url?`<img src="${p.imagen_url}" style="width:100%;height:110px;object-fit:cover;display:block">`:''}
       <div style="padding:12px 14px 8px;border-bottom:1px solid var(--border)">
-        <div style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">${catFamiliasDe(p).join(' · ')}</div>
+        <div style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">${catFamiliasDe(p).join(' · ')}</div>${p.color_clasificacion?`<div style="font-size:9px;color:var(--muted);margin-bottom:4px">🎨 ${p.color_clasificacion}</div>`:''}
         <div style="font-size:13px;font-weight:500;line-height:1.3">${p.nombre}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:var(--mono)">${p.clave||''}</div>
         <div style="margin-top:6px">${catHomologBadge(p.nombre)}</div>
@@ -5974,7 +5974,7 @@ function catFilter(){
       <div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:11px;color:var(--muted)">${p.uso_dosificacion||'—'}</span>
         <span style="display:flex;align-items:center;gap:6px">
-          ${p.ficha_tecnica_url?`<a href="${p.ficha_tecnica_url}" target="_blank" onclick="event.stopPropagation()" title="Descargar ficha técnica" style="text-decoration:none;font-size:12px">📄</a>`:''}
+          ${p.ficha_tecnica_url?`<a href="${p.ficha_tecnica_url}" target="_blank" onclick="event.stopPropagation()" title="Descargar ficha técnica" style="text-decoration:none;font-size:12px">📄</a>`:''}${p.msds_url?`<a href="${p.msds_url}" target="_blank" onclick="event.stopPropagation()" title="Descargar MSDS" style="text-decoration:none;font-size:12px">☣️</a>`:''}
           ${currentUser.rol==='admin'?`<button onclick="event.stopPropagation();catOpenEdit('${p.id}')" title="Editar" style="background:none;border:none;cursor:pointer;font-size:12px">✏️</button>`:''}
           <span style="font-size:11px;color:var(--muted)">HDT ›</span>
         </span>
