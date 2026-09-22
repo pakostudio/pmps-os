@@ -1269,6 +1269,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">FAMILIA</th>
           <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)">USO/DOSIFICACIÓN</th>
           <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted)" title="Estatus de producción/homologación">PRODUCCIÓN</th>
+                        <th style="padding:7px 10px;text-align:right;font-size:11px;color:var(--muted)">PRECIO MIN.</th>
           <th></th>
         </tr></thead>
         <tbody id="cat-tbody"></tbody>
@@ -1297,6 +1298,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <input type="text" id="cat-edit-uso" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
         <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Descripción</label>
           <textarea id="cat-edit-descripcion" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px;min-height:70px;resize:vertical"></textarea></div>
+                <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Precio mínimo (MXN)</label>
+                            <input type="number" step="0.01" id="cat-edit-precio" placeholder="Ej. 450.00" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:4px"></div>
         <div style="display:flex;gap:12px;margin-bottom:4px">
           <div style="flex:1">
             <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">Imagen del producto</label>
@@ -5946,9 +5949,10 @@ function catFilter(){
         <td style="padding:7px 10px"><span style="font-size:10px;font-weight:500;color:${color};text-transform:uppercase;letter-spacing:.03em">${catFamiliasDe(p).join(' · ')||'—'}</span></td>
         <td style="padding:7px 10px;color:var(--muted)">${p.uso_dosificacion||'—'}</td>
         <td style="padding:7px 10px">${catHomologBadge(p.nombre)}</td>
+                  <td style="padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px">${p.precio_minimo?fmtValor(p.precio_minimo):'-'}</td>
         <td style="padding:7px 10px">${currentUser.rol==='admin'?`<button onclick="event.stopPropagation();catOpenEdit('${p.id}')" title="Editar" style="background:none;border:none;cursor:pointer;font-size:12px">✏️</button>`:''}</td>
       </tr>`
-    }).join('') || `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados</td></tr>`
+    }).join('') || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Sin resultados</td></tr>`
     return
   }
 
@@ -6013,6 +6017,7 @@ function catOpenEdit(id){
   document.getElementById('cat-edit-familia3').value = p.familia_3||''
   document.getElementById('cat-edit-uso').value = p.uso_dosificacion||''
   document.getElementById('cat-edit-descripcion').value = p.descripcion||''
+    document.getElementById('cat-edit-precio').value = p.precio_minimo||''
   const preview = document.getElementById('cat-edit-foto-preview')
   if(p.imagen_url){ preview.src = p.imagen_url; preview.style.display = 'block' } else { preview.style.display = 'none' }
   const fichaLink = document.getElementById('cat-edit-ficha-link')
@@ -6057,6 +6062,7 @@ async function catSaveEdit(){
   const familia_2 = document.getElementById('cat-edit-familia2').value.trim()
   const familia_3 = document.getElementById('cat-edit-familia3').value.trim()
   const uso_dosificacion = document.getElementById('cat-edit-uso').value.trim()
+    const precio_minimo_raw = document.getElementById('cat-edit-precio')?.value?.trim()||''
   const descripcion = document.getElementById('cat-edit-descripcion').value.trim()
   if(!nombre){ showToast('El nombre es requerido','⚠️'); return }
   if(clave && productos_cat.some(p=>p.id!=catEditingId && (p.clave||'').toLowerCase()===clave.toLowerCase())){
@@ -6086,7 +6092,9 @@ async function catSaveEdit(){
       if(!upRes.ok) throw new Error('No se pudo subir la ficha técnica: '+await upRes.text())
       ficha_tecnica_url = `${SB_URL}/storage/v1/object/public/productos-media/${path}`
     }
-    const cambios = {clave, nombre, familia, familia_2, familia_3, uso_dosificacion, descripcion, imagen_url, ficha_tecnica_url}
+    const precio_minimo = precio_minimo_raw ? parseFloat(precio_minimo_raw) : null
+        if(precio_minimo_raw && isNaN(precio_minimo)){ showToast('Precio mínimo inválido','⚠️'); return }
+      const cambios = {clave, nombre, familia, familia_2, familia_3, uso_dosificacion, descripcion, imagen_url, ficha_tecnica_url, precio_minimo, precio_actualizado_en: precio_minimo!==null?new Date().toISOString():null, precio_actualizado_por: precio_minimo!==null?(currentUser?.nombre||null):null}
     await sbPatch('pmps_productos', catEditingId, cambios)
     const idx = productos_cat.findIndex(x=>x.id==catEditingId)
     if(idx>=0) Object.assign(productos_cat[idx], cambios)
