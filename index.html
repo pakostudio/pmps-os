@@ -3073,7 +3073,23 @@ function renderRepVelocidad(){
 // ══════════════════════════════════════════
 // KANBAN (reportes — todos los usuarios)
 // ══════════════════════════════════════════
-function renderRepKanban(){
+function proximaAccionInfo(l){
+        const segs=l.seguimientos||[];
+        const ult=segs[segs.length-1];
+        if(!ult||!ult.accion||!ult.fecha) return null;
+        const dias=diasDesde(ult.fecha);
+        return {accion:ult.accion, fecha:ult.fecha, vencido:dias>0, hoy:dias===0};
+    }
+      function proximaAccionBadge(l){
+        const pa=proximaAccionInfo(l);
+        if(!pa) return '';
+        let color='#3b82f6', bg='rgba(59,130,246,.15)', label=fmtFecha(pa.fecha);
+        if(pa.vencido){ color='#ef4444'; bg='rgba(239,68,68,.15)'; label='VENCIDO '+fmtFecha(pa.fecha); }
+        else if(pa.hoy){ color='#f59e0b'; bg='rgba(245,158,11,.15)'; label='HOY: '+fmtFecha(pa.fecha); }
+        return `<div title="${esc(pa.accion)}" style="margin-top:4px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;color:${color};background:${bg};display:inline-block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">📅 ${esc(label)}: ${esc(pa.accion)}</div>`;
+    }
+    
+    function renderRepKanban(){
   const el = document.getElementById('rep-kanban-board');
   if(!el) return;
   const etapas = ['Prospecto','Contactado','Propuesta','Negociación','Cerrado ganado'];
@@ -3112,6 +3128,7 @@ function renderRepKanban(){
               <span style="font-size:10px;color:var(--muted)">${fmtValor(l.valor)}</span>
             </div>
             <span style="font-size:10px;font-weight:${frio?700:400};color:${frio?'var(--red)':'var(--muted)'}">${frio?'⚠️ ':''}${dias===0?'Hoy':dias===1?'Ayer':dias+'d'}</span>
+                      ${proximaAccionBadge(l)}
           </div>
         </div>`;
       }).join('')}
@@ -4330,6 +4347,7 @@ function renderAdminKanban(){
               <span style="font-size:10px;color:var(--muted)">${fmtValor(l.valor)}</span>
             </div>
             <span style="font-size:10px;font-weight:${frio?700:400};color:${frio?'var(--red)':'var(--muted)'}">${frio?'⚠️ ':''}${dias===0?'Hoy':dias===1?'Ayer':dias+'d'}</span>
+                        ${proximaAccionBadge(l)}
           </div>
         </div>`;
       }).join('')}
