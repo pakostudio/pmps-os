@@ -1734,6 +1734,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <input class="search-input" id="dir-search" placeholder="Buscar empresa o municipio..." oninput="dirFilter()">
         </div>
         <select class="fsel" id="dir-estado" onchange="dirFilter()"><option value="">Todos los estados</option></select>
+                <select class="fsel" id="dir-ciudad" onchange="dirFilter()"><option value="">Todas las ciudades</option></select>
         <button onclick="dirClearFilters()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">Limpiar</button>
         <button onclick="dirExportCSV()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Exportar CSV</button>
         <div style="display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden">
@@ -7016,6 +7017,7 @@ async function dirSaveModal(){
     const MOZ_URL = 'https://mozart-inteligencia-comercial.vercel.app/api/external/search'
     const MOZ_KEY = 'moz_svc_a5e5d69794d3c8c2183e03cac7bd9530d0364ef809aa4de3'
     let mozResults = [], mozTotal = 0, mozSearchTimer = null
+      let mozResultsAll = []
     
     function mozLoadEstados(){
         const estados = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','CDMX','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas']
@@ -7023,14 +7025,22 @@ async function dirSaveModal(){
         if(!sel) return
         sel.innerHTML = '<option value="">Todos los estados</option>' + estados.map(e=>`<option>${e}</option>`).join('')
     }
+
+        function mozPopulateCiudades(preservarSel){
+                const sel = document.getElementById('dir-ciudad')
+                if(!sel) return
+                const ciudades = [...new Set(mozResultsAll.map(r=>r.ciudad).filter(Boolean))].sort((a,b)=>a.localeCompare(b))
+                sel.innerHTML = '<option value="">Todas las ciudades</option>' + ciudades.map(c=>`<option${c===preservarSel?' selected':''}>${c}</option>`).join('')
+        }
     
     async function mozSearch(){
         const q = document.getElementById('dir-search')?.value||''
         const estadoSel = document.getElementById('dir-estado')?.value||''
+            const ciudadSel = document.getElementById('dir-ciudad')?.value||''
         const tbody = document.getElementById('dir-tbody')
         if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Buscando en Mozart...</td></tr>`
         try {
-              const body = { query: q, limit: 100, offset: 0 }
+              const body = { query: q, limit: 300, offset: 0 }
               if(estadoSel) body.estados = [estadoSel]
               const res = await fetch(MOZ_URL, {
                       method: 'POST',
@@ -7040,7 +7050,10 @@ async function dirSaveModal(){
               if(!res.ok) throw new Error('HTTP '+res.status)
               const data = await res.json()
               mozResults = data.results || []
-              mozTotal = data.total || mozResults.length
+                    mozResultsAll = mozResults
+                    mozPopulateCiudades(ciudadSel)
+                    if(ciudadSel){ mozResults = mozResultsAll.filter(r=>r.ciudad===ciudadSel) }
+              mozTotal = ciudadSel ? mozResults.length : (data.total || mozResults.length)
               dirPage = 1
               mozRenderKpis(data)
               mozRenderTable()
@@ -7139,15 +7152,15 @@ async function dirSaveModal(){
     function dirClearFilters(){
       const el = document.getElementById('dir-search'); if(el) el.value=''
       const es = document.getElementById('dir-estado'); if(es) es.value=''
+            const ec = document.getElementById('dir-ciudad'); if(ec) ec.value=''
       mozSearch()
     }
     
     async function loadDirectorio(){
-      mozLoadEstados()
+            mozLoadEstados()
       await mozSearch()
     }
-    
-    // Boot: cargar usuarios reales ANTES de que alguien intente iniciar sesión
+
 initUsuarios()
 cargarConfig()
 
