@@ -6128,7 +6128,12 @@ function verProducto(id){
     <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Sectores</div>
     <div style="display:flex;gap:5px;flex-wrap:wrap">
       ${p.sector_aplicacion.map(s=>`<span style="padding:2px 8px;border-radius:99px;border:1px solid var(--border);font-size:11px;color:var(--muted)">${s}</span>`).join('')}
-    </div>`:''}`
+    </div>`:''}
+        <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;margin:12px 0 6px">Documentos</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+                  ${p.ficha_tecnica_url?`<a href="${p.ficha_tecnica_url}" target="_blank" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);font-size:12px;color:var(--accent);text-decoration:none">Ver HDT</a>`:`<span style="padding:6px 12px;border-radius:7px;background:var(--surface2);font-size:12px;color:var(--muted)">HDT no disponible</span>`}
+                        ${p.msds_url?`<a href="${p.msds_url}" target="_blank" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);font-size:12px;color:var(--accent);text-decoration:none">Ver MSDS</a>`:`<span style="padding:6px 12px;border-radius:7px;background:var(--surface2);font-size:12px;color:var(--muted)">MSDS no disponible</span>`}
+                            </div>`
   document.getElementById('modal-detalle').style.display='flex'
 }
 
