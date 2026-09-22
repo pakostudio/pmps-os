@@ -1730,31 +1730,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input class="search-input" id="dir-search" placeholder="Buscar empresa o municipio..." oninput="dirFilter()">
         </div>
-        <select class="fsel" id="dir-tier" onchange="dirFilter()">
-          <option value="">Todos los tiers</option>
-          <option value="Platino">🔵 Platino</option><option value="Oro">🟡 Oro</option>
-          <option value="Plata">⚪ Plata</option><option value="Bronce">🟤 Bronce</option>
-        </select>
-        <select class="fsel" id="dir-sector" onchange="dirFilter()">
-          <option value="">Todos los sectores</option>
-          <option value="Alimentos">Alimentos</option><option value="Bebidas">Bebidas</option>
-          <option value="Farmaceutico">Farmacéutico</option><option value="Hospitales">Hospitales</option>
-          <option value="Hoteles">Hoteles</option><option value="Institucional">Institucional</option>
-        </select>
-        <select class="fsel" id="dir-zona" onchange="dirFilter()">
-          <option value="">Todas las zonas</option>
-          <option value="Centro">Centro</option><option value="Norte">Norte</option>
-          <option value="Bajio">Bajío</option><option value="Sur">Sur</option>
-        </select>
         <select class="fsel" id="dir-estado" onchange="dirFilter()"><option value="">Todos los estados</option></select>
-        <select class="fsel" id="dir-estatus" onchange="dirFilter()">
-          <option value="">Todos los estatus</option>
-          <option value="Nuevo">Nuevo</option><option value="Contactado">Contactado</option>
-          <option value="Calificado">Calificado</option><option value="Cliente">Cliente</option>
-        </select>
-        <label id="dir-mis-leads-wrap" style="display:none;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;margin:0;font-weight:normal;text-transform:none;letter-spacing:0">
-          <input type="checkbox" id="dir-mis-leads" onchange="dirFilter()" style="width:14px;height:14px;margin:0"> Solo mis leads
-        </label>
         <button onclick="dirClearFilters()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">Limpiar</button>
         <button onclick="dirExportCSV()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font)">⬇️ Exportar CSV</button>
         <div style="display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden">
@@ -1766,14 +1742,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="dir-view-table-wrap" style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="border-bottom:1px solid var(--border)">
-            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('nombre_establecimiento')">EMPRESA</th>
-            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">GIRO</th>
-            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('sector')">SECTOR</th>
-            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('tier')">TIER</th>
-            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('municipio')">MUNICIPIO</th>
-            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('estado')">ESTADO</th>
-            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">ZONA</th>
-            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);cursor:pointer" onclick="dirSortBy('estatus')">ESTATUS</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">EMPRESA</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">CONTACTO</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">SECTOR</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">SCORE</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">CIUDAD</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">ESTADO</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">FUENTE</th>
+            <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">TELÉFONO</th>
             <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--muted)">VENDEDOR</th>
             <th></th>
           </tr></thead>
@@ -7085,7 +7061,7 @@ async function dirSaveModal(){
                                           <td style="padding:7px 10px;font-size:12px">${esc(r.ciudad||'-')}</td>
                                                 <td style="padding:7px 10px;font-size:12px">${esc(r.estado||'-')}</td>
                                                       <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${esc(r.fuente||'-')}</td>
-                                                            <td style="padding:7px 10px;font-size:11px">${esc(r.telefono||'-')}</td>
+                                                            <td style="padding:7px 10px;font-size:11px">${esc(r.telefono||'-')} ${r.telefono?waBtn(r.telefono, 'Hola, te contacto de PMPS Menlun respecto a '+r.empresa):''}</td
                                                                   <td style="padding:7px 10px;font-size:11px;color:var(--muted)">-</td>
                                                                         <td style="padding:7px 10px" id="moz-assign-${idx}"><button onclick="mozAssign(${idx})" style="background:#1B3A6B;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px">+ Asignar a mi cartera</button></td>
                                                                             </tr>`).join('')
