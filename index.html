@@ -1250,6 +1250,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <select class="fsel" id="cat-familia" onchange="catFilter()">
         <option value="">Todas las familias</option>
       </select>
+            <select class="fsel" id="cat-color" onchange="catFilter()"><option value="">Todos los colores</option></select>
       <button onclick="catOpenNuevo()" class="btn btn-sm" style="background:#0F6E56">➕ Nuevo producto</button>
       <button onclick="catExportExcel()" class="btn-export-xls" title="Exportar a Excel"><img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>Excel</button>
       <button onclick="catExportPDF()" class="btn-export-pdf" title="Exportar a PDF"><img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"/>PDF</button>
@@ -5891,6 +5892,10 @@ function renderCatPills(){
   const datalist = document.getElementById('cat-familias-datalist')
   if(datalist) datalist.innerHTML = familias.map(f=>`<option value="${esc(f)}">`).join('')
   const pills = document.getElementById('cat-pills-row')
+      const selColor = document.getElementById('cat-color')
+      if(selColor){
+              const prevColor = selColor.value
+              const colores = [...new Set(productos_cat.map(p=>p.color_clasificacion).filter(Boolean))].sort()
   if(!pills) return
   pills.innerHTML = ['Todas',...familias].map(f=>`
     <button onclick="catPillClick(this,'${f}')"
@@ -5930,9 +5935,11 @@ function catApplyViewStyles(){
 function catFilter(){
   const q = (document.getElementById('cat-search')?.value||'').toLowerCase()
   const fam = document.getElementById('cat-familia')?.value||''
+      const color = document.getElementById('cat-color')?.value||''
   const data = productos_cat.filter(p=>
     (!q || p.nombre.toLowerCase().includes(q) || (p.descripcion||'').toLowerCase().includes(q)) &&
-    (!fam || catFamiliasDe(p).includes(fam))
+    (!fam || catFamiliasDe(p).includes(fam)) &&
+          (!color || p.color_clasificacion===color)
   )
   const countEl = document.getElementById('cat-count')
   if(countEl) countEl.textContent = data.length+' productos'
