@@ -1323,6 +1323,16 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
           </div>
         </div>
+                  <div style="margin-bottom:12px">
+                                <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">MSDS (PDF)</label>
+                                <div style="margin-top:4px">
+                                                <a id="cat-edit-msds-link" href="#" target="_blank" style="display:none;font-size:11px;margin-bottom:6px;color:#1B3A6B">Ver MSDS actual</a>
+                                                <label style="display:inline-block;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);font-size:12px;cursor:pointer">
+                                                                  Subir MSDS
+                                                                  <input type="file" accept="application/pdf" id="cat-edit-msds-input" style="display:none" onchange="catMsdsSeleccionada(this)">
+                                                </label>
+                                </div>
+                  </div>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
         <button onclick="document.getElementById('modal-cat-edit').style.display='none'" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font);cursor:pointer">Cancelar</button>
@@ -6001,6 +6011,7 @@ function catExportPDF(){
 let catEditingId = null
 let catFotoFile = null
 let catFichaFile = null
+    let catMsdsFile = null
 function catFotoSeleccionada(input){
   catFotoFile = input.files[0]||null
   if(catFotoFile){
@@ -6013,11 +6024,16 @@ function catFichaSeleccionada(input){
   catFichaFile = input.files[0]||null
   if(catFichaFile) showToast('PDF listo — se subirá al guardar')
 }
+  function catMsdsSeleccionada(input){
+      catMsdsFile = input.files[0]||null
+      if(catMsdsFile) showToast('MSDS listo — se subirá al guardar')
+  }
 function catOpenEdit(id){
   const p = productos_cat.find(x=>x.id==id); if(!p) return
   catEditingId = id
   catFotoFile = null
   catFichaFile = null
+    catMsdsFile = null
   document.getElementById('cat-edit-clave').value = p.clave||''
   document.getElementById('cat-edit-nombre').value = p.nombre||''
   document.getElementById('cat-edit-familia').value = p.familia||''
@@ -6030,8 +6046,11 @@ function catOpenEdit(id){
   if(p.imagen_url){ preview.src = p.imagen_url; preview.style.display = 'block' } else { preview.style.display = 'none' }
   const fichaLink = document.getElementById('cat-edit-ficha-link')
   if(p.ficha_tecnica_url){ fichaLink.href = p.ficha_tecnica_url; fichaLink.style.display = 'inline-block' } else { fichaLink.style.display = 'none' }
+    const msdsLink = document.getElementById('cat-edit-msds-link')
+    if(p.msds_url){ msdsLink.href = p.msds_url; msdsLink.style.display = 'inline-block' } else { msdsLink.style.display = 'none' }
   document.getElementById('cat-edit-foto-input').value = ''
   document.getElementById('cat-edit-ficha-input').value = ''
+    document.getElementById('cat-edit-msds-input').value = ''
   document.getElementById('modal-cat-edit').style.display = 'flex'
 }
 function catOpenNuevo(){
@@ -6079,6 +6098,7 @@ async function catSaveEdit(){
   try {
     let imagen_url = productos_cat.find(x=>x.id==catEditingId)?.imagen_url || null
     let ficha_tecnica_url = productos_cat.find(x=>x.id==catEditingId)?.ficha_tecnica_url || null
+      let msds_url = productos_cat.find(x=>x.id==catEditingId)?.msds_url || null
     if(catFotoFile){
       const ext = (catFotoFile.name.split('.').pop()||'jpg')
       const path = `producto-${catEditingId}-${Date.now()}.${ext}`
@@ -6100,9 +6120,20 @@ async function catSaveEdit(){
       if(!upRes.ok) throw new Error('No se pudo subir la ficha técnica: '+await upRes.text())
       ficha_tecnica_url = `${SB_URL}/storage/v1/object/public/productos-media/${path}`
     }
+      if(catMsdsFile){
+            const path = `msds-${catEditingId}-${Date.now()}.pdf`
+            const upRes = await fetch(`${SB_URL}/storage/v1/object/productos-media/${path}`, {
+                    method:'POST',
+                    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/pdf' },
+                    body: catMsdsFile
+            })
+            if(!upRes.ok) throw new Error('No se pudo subir el MSDS: '+await upRes.text())
+            msds_url = `${SB_URL}/storage/v1/object/public/productos-media/${path}`
+      }
+          
     const precio_minimo = precio_minimo_raw ? parseFloat(precio_minimo_raw) : null
         if(precio_minimo_raw && isNaN(precio_minimo)){ showToast('Precio mínimo inválido','⚠️'); return }
-      const cambios = {clave, nombre, familia, familia_2, familia_3, uso_dosificacion, descripcion, imagen_url, ficha_tecnica_url, precio_minimo, precio_actualizado_en: precio_minimo!==null?new Date().toISOString():null, precio_actualizado_por: precio_minimo!==null?(currentUser?.nombre||null):null}
+      const cambios = {clave, nombre, familia, familia_2, familia_3, uso_dosificacion, descripcion, imagen_url, ficha_tecnica_url, precio_minimo, precio_actualizado_en: precio_minimo!==null?new Date().toISOString():null, precio_actualizado_por: precio_minimo!==null?(currentUser?.nombre||null):null, msds_url}
     await sbPatch('pmps_productos', catEditingId, cambios)
     const idx = productos_cat.findIndex(x=>x.id==catEditingId)
     if(idx>=0) Object.assign(productos_cat[idx], cambios)
