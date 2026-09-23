@@ -666,6 +666,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button onclick="switchAdminTab('todos-clientes')" id="atab-todos-clientes" class="atab">🏢 Todos los Clientes</button>
         <button onclick="switchAdminTab('automatizaciones')" id="atab-automatizaciones" class="atab">🤖 Automatizaciones <span id="atab-automatizaciones-badge" style="display:none;background:#A32D2D;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px">0</span></button>
         <button onclick="switchAdminTab('workflow')" id="atab-workflow" class="atab">⚙️ Workflow</button>
+        <button onclick="switchAdminTab('documentos')" id="atab-documentos" class="atab">📁 Documentos</button>
         <button onclick="switchAdminTab('actividad')" id="atab-actividad" class="atab">🕓 Actividad</button>
         <button onclick="switchAdminTab('importar')" id="atab-importar" class="atab">⬇️ Importar</button>
         <button onclick="switchAdminTab('migrar')" id="atab-migrar" class="atab">🔄 Migrar</button>
@@ -774,6 +775,20 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <button class="btn btn-sm" onclick="wfCrearRegla()">➕ Crear regla</button>
         </div>
         <div id="workflow-list"></div>
+      </div>
+
+      <!-- TAB: DOCUMENTOS (carpeta Drive para Propuesta/Cotización) -->
+      <div id="apanel-documentos" style="display:none">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Carpeta de Google Drive donde viven las presentaciones, catálogos y fichas técnicas que se usan al enviar una Propuesta o Cotización a un cliente. El enlace se incluye automáticamente en el cuerpo de esos correos.
+        </div>
+        <div class="card mb16" style="padding:16px;max-width:640px">
+          <div class="section-title" style="margin-bottom:10px">📁 Carpeta de documentos</div>
+          <label>Enlace de la carpeta de Drive</label>
+          <input id="cfg-drive-folder" placeholder="https://drive.google.com/drive/folders/...">
+          <button class="btn btn-sm" style="margin-top:10px" onclick="guardarDriveFolder()">Guardar</button>
+          <div id="cfg-drive-folder-estado" class="muted" style="font-size:12px;margin-top:8px"></div>
+        </div>
       </div>
 
       <!-- TAB: ACTIVIDAD (historial de cambios) -->
@@ -1075,6 +1090,43 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div class="modal-actions">
       <button class="btn btn-sm" onclick="guardarSeguimiento()">Guardar</button>
       <button class="btn btn-sm btn-ghost" onclick="closeModal('modal-seg')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: ENVIAR PROPUESTA / COTIZACIÓN ════ -->
+<div class="modal-overlay" id="modal-envio-doc">
+  <div class="modal">
+    <div class="modal-title" id="envio-title">Enviar Propuesta</div>
+    <input type="hidden" id="envio-lead-id">
+    <input type="hidden" id="envio-tipo">
+    <div id="envio-carpeta-aviso" style="display:none;background:#FFF7E6;border:1px solid #F0D48A;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#8A6A1A">⚠️ La carpeta de documentos (Drive) todavía no está configurada. Pídele a un Administrador que la agregue en Administrador → 📁 Documentos.</div>
+    <div id="envio-plantilla-aviso" style="display:none;background:#EEF3FA;border:1px solid #C6D9EF;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#0C447C">ℹ️ Plantilla provisional — se actualizará cuando tengamos el formato oficial de cotización.</div>
+    <label>Para (correo del cliente)</label>
+    <input type="email" id="envio-para" placeholder="cliente@empresa.com">
+    <label>Asunto</label>
+    <input type="text" id="envio-asunto">
+    <label>Cuerpo del correo</label>
+    <textarea id="envio-cuerpo" style="min-height:200px"></textarea>
+    <div style="border-top:1px solid var(--border);margin:14px 0;padding-top:12px">
+      <label style="font-weight:600">Seguimiento — próxima acción</label>
+      <div class="g2" style="margin-top:6px">
+        <div><label>Canal del próximo contacto</label>
+          <select id="envio-canal">
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Email">Correo</option>
+            <option value="Llamada">Llamada</option>
+          </select>
+        </div>
+        <div><label>Fecha compromiso</label><input type="date" id="envio-fecha"></div>
+      </div>
+      <label style="margin-top:8px">¿Qué sigue?</label>
+      <input type="text" id="envio-accion" placeholder="Confirmar recepción y dar seguimiento">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm btn-outline" onclick="abrirGmailEnvio()">📧 Abrir en Gmail</button>
+      <button class="btn btn-sm" onclick="confirmarEnvioDoc()">✓ Marcar como enviado</button>
+      <button class="btn btn-sm btn-ghost" onclick="closeModal('modal-envio-doc')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -2531,6 +2583,8 @@ function renderLeads(filtro=''){
           <div class="muted">${fmtFecha(s.fecha)}${s.accion?' · Próximo: '+s.accion:''}</div></div>
         </div>`).join('')}</div>`:''}
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline" onclick="abrirEnvioDoc('${l.id}','propuesta')">📧 Enviar Propuesta</button>
+          <button class="btn btn-sm btn-outline" onclick="abrirEnvioDoc('${l.id}','cotizacion')">📄 Enviar Cotización</button>
           <button class="btn btn-sm btn-outline" onclick="abrirSeg('${l.id}','lead','${l.empresa}')">+ Registrar seguimiento</button>
           <button class="btn btn-sm btn-ghost" onclick="abrirEditarLead('${l.id}')">✏️ Editar</button>
           <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="eliminarLead('${l.id}')">Eliminar</button>
@@ -2631,6 +2685,84 @@ async function guardarSeguimiento(){
 
   setSyncStatus('✓ Guardado');
   showToast('Seguimiento registrado');
+  setLoading(false); renderAll();
+}
+
+// ══════════════════════════════════════════
+// ENVÍO DE PROPUESTA / COTIZACIÓN (ciclo comercial)
+// ══════════════════════════════════════════
+function plantillaEnvioDoc(tipo, l){
+  const nombre = currentUser.nombre || currentUser.name || '';
+  const primerNombre = (l.contacto||'').trim().split(' ')[0] || l.contacto || 'estimado cliente';
+  const driveLink = CONFIG_CACHE['drive_folder_docs'] || '';
+  const anexo = driveLink ? `Puedes revisar toda la información (presentación, catálogo y ficha técnica) aquí: ${driveLink}` : `[Falta configurar la carpeta de documentos en Administrador → 📁 Documentos]`;
+  if(tipo==='cotizacion'){
+    return {
+      asunto: `Envío cotización — ${l.empresa||''}`,
+      cuerpo: `Estimado ${primerNombre},\n\nGracias por tu interés. Con gusto te comparto la cotización solicitada para ${l.empresa||'tu empresa'}.\n\n[Detalle de productos, cantidades y precios — completar antes de enviar]\n\n${anexo}\n\nQuedo atento a tus comentarios para continuar con el proceso.\n\nSaludos,\n${nombre}\nPMPS Menlun`
+    };
+  }
+  return {
+    asunto: `Propuesta PMPS — ${l.empresa||''}`,
+    cuerpo: `Estimado ${primerNombre},\n\nPor medio de la presente, me permito enviarte la propuesta de nuestros productos para que conozcas nuestra presentación y catálogo.\n\nTe anexo la ficha técnica y el material correspondiente a lo que estás requiriendo.\n\n${anexo}\n\nQuedo al pendiente de tus comentarios.\n\nSaludos,\n${nombre}\nPMPS Menlun`
+  };
+}
+function abrirEnvioDoc(id, tipo){
+  const l = leads.find(x=>x.id===id);
+  if(!l){ showToast('No se encontró el lead','⚠️'); return; }
+  const etiqueta = tipo==='cotizacion' ? 'Cotización' : 'Propuesta';
+  document.getElementById('envio-lead-id').value = id;
+  document.getElementById('envio-tipo').value = tipo;
+  document.getElementById('envio-title').textContent = `Enviar ${etiqueta} — ${l.empresa||''}`;
+  document.getElementById('envio-para').value = l.email||'';
+  const t = plantillaEnvioDoc(tipo, l);
+  document.getElementById('envio-asunto').value = t.asunto;
+  document.getElementById('envio-cuerpo').value = t.cuerpo;
+  document.getElementById('envio-carpeta-aviso').style.display = CONFIG_CACHE['drive_folder_docs'] ? 'none' : 'block';
+  document.getElementById('envio-plantilla-aviso').style.display = tipo==='cotizacion' ? 'block' : 'none';
+  document.getElementById('envio-canal').value = 'WhatsApp';
+  const fc = new Date(); fc.setDate(fc.getDate()+3);
+  document.getElementById('envio-fecha').value = fc.toISOString().split('T')[0];
+  document.getElementById('envio-accion').value = 'Confirmar recepción y dar seguimiento';
+  openModal('modal-envio-doc');
+}
+function abrirGmailEnvio(){
+  const para = document.getElementById('envio-para').value.trim();
+  const asunto = document.getElementById('envio-asunto').value;
+  const cuerpo = document.getElementById('envio-cuerpo').value;
+  if(!para){ showToast('Falta el correo del cliente','⚠️'); return; }
+  const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(para)}&su=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+  window.open(url, '_blank');
+}
+async function confirmarEnvioDoc(){
+  const id = document.getElementById('envio-lead-id').value;
+  const tipo = document.getElementById('envio-tipo').value;
+  const l = leads.find(x=>x.id===id);
+  if(!l){ showToast('No se encontró el lead','⚠️'); return; }
+  const etiqueta = tipo==='cotizacion' ? 'Cotización' : 'Propuesta';
+  const canal = document.getElementById('envio-canal').value || 'WhatsApp';
+  const seg = {
+    canal: 'Email',
+    creado: hoy(),
+    resumen: `${etiqueta} enviada por correo a ${l.contacto||l.empresa||''}`,
+    accion: (document.getElementById('envio-accion').value||'').trim() || 'Confirmar recepción y dar seguimiento',
+    fecha: document.getElementById('envio-fecha').value,
+    proximoCanal: canal
+  };
+  setLoading(true,'Guardando...');
+  closeModal('modal-envio-doc');
+  if(!l.seguimientos) l.seguimientos = [];
+  l.seguimientos.push(seg);
+  l.ultimo_movimiento = hoy();
+  if(tipo==='propuesta' && (l.etapa==='Prospecto'||l.etapa==='Contactado')) l.etapa = 'Propuesta';
+  if(tipo==='cotizacion' && l.etapa!=='Cerrado ganado' && l.etapa!=='Cerrado perdido') l.etapa = 'Negociación';
+  try{
+    await apiPost('upsert','prospectos', l);
+    setSyncStatus('✓ Guardado');
+    showToast(`${etiqueta} registrada y seguimiento guardado ✓`);
+  }catch(e){
+    showToast('Error al guardar: '+(e.message||''),'⚠️');
+  }
   setLoading(false); renderAll();
 }
 
@@ -3626,7 +3758,7 @@ function renderEntrantesCount(){
 }
 
 function switchAdminTab(tab){
-  const tabs = ['overview','kanban','entrantes','todos-leads','todos-clientes','automatizaciones','workflow','actividad','importar','migrar','usuarios','claves'];
+  const tabs = ['overview','kanban','entrantes','todos-leads','todos-clientes','automatizaciones','workflow','documentos','actividad','importar','migrar','usuarios','claves'];
   tabs.forEach(t=>{
     const panel = document.getElementById('apanel-'+t);
     const btn = document.getElementById('atab-'+t);
@@ -3644,6 +3776,7 @@ function switchAdminTab(tab){
   if(tab==='todos-clientes') renderAdminClientes();
   if(tab==='automatizaciones') renderAutomatizaciones();
   if(tab==='workflow'){ wfUpdateCampos(); renderWorkflow(); }
+  if(tab==='documentos') renderDocumentosConfig();
   if(tab==='actividad') renderActividad();
 }
 
@@ -3852,6 +3985,29 @@ async function cargarConfig(){
     const rows = await sbGet('pmps_config','key,value','');
     rows.forEach(r=>{ CONFIG_CACHE[r.key] = r.value; });
   }catch(e){ console.error('No se pudo cargar la configuración', e); }
+}
+function renderDocumentosConfig(){
+  const input = document.getElementById('cfg-drive-folder');
+  if(!input) return;
+  input.value = CONFIG_CACHE['drive_folder_docs'] || '';
+  const estado = document.getElementById('cfg-drive-folder-estado');
+  if(estado) estado.textContent = CONFIG_CACHE['drive_folder_docs'] ? '✓ Configurada — se incluye en los correos de Propuesta/Cotización.' : 'Sin configurar todavía — los correos avisarán que falta el enlace.';
+}
+async function guardarDriveFolder(){
+  const val = (document.getElementById('cfg-drive-folder').value||'').trim();
+  const existe = CONFIG_CACHE['drive_folder_docs'] !== undefined;
+  try{
+    if(existe){
+      await sbSecureWrite('update','pmps_config',{key:'drive_folder_docs'},{value:val});
+    } else {
+      await sbSecureWrite('insert','pmps_config',{},{key:'drive_folder_docs', value:val});
+    }
+    CONFIG_CACHE['drive_folder_docs'] = val;
+    showToast('Carpeta de documentos guardada ✓');
+    renderDocumentosConfig();
+  }catch(e){
+    showToast('Error al guardar: '+(e.message||''),'⚠️');
+  }
 }
 const AUTO_UMBRAL_DEFAULT = { 'leads-frios': 7, 'pago-vence': 3 };
 function autoRuleEnabled(id){

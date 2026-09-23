@@ -2,7 +2,29 @@
 
 Objetivo: llevar PMPS CRM V2 al nivel de Salesforce/HubSpot/Monday en los puntos donde hoy nos quedamos cortos, para poder mostrarlo con orgullo a clientes potenciales y usarlo como diferenciador comercial.
 
-Última actualización: 2026-07-12.
+Última actualización: 2026-09-22.
+
+✅ Ciclo comercial: envío de Propuesta y Cotización desde el lead (2026-09-22)
+
+Pedido de Pako: que desde el ciclo de un lead se pueda disparar el correo de Propuesta (información de productos/presentación/ficha técnica) y, cuando el cliente acepta y pide precio, el correo de Cotización — ambos jalando los documentos desde una carpeta de Drive centralizada, y quedando registrados con seguimiento (próximo contacto por WhatsApp o correo) para dar trazabilidad al ciclo comercial completo.
+
+Qué se construyó:
+
+Botones "📧 Enviar Propuesta" y "📄 Enviar Cotización" en la ficha de cada lead (Mis Leads), junto al botón existente de "+ Registrar seguimiento".
+Modal que arma el correo automáticamente: destinatario (del lead), asunto y cuerpo con plantilla editable (nombre de contacto, empresa, y enlace a la carpeta de documentos), antes de enviarlo.
+Plantilla de Propuesta: enfocada en presentar productos/catálogo/ficha técnica. Plantilla de Cotización: placeholder provisional (marcado en el modal con un aviso) a reserva del formato oficial que use José Carlos — se reemplaza en cuanto lo comparta.
+Carpeta de documentos (Drive) configurable en Administrador → 📁 Documentos: un solo enlace, guardado en pmps_config, que se inserta automáticamente en el cuerpo de ambos correos. Si no está configurada, el modal avisa en vez de fallar.
+Botón "📧 Abrir en Gmail": arma la URL de Gmail compose (destinatario, asunto y cuerpo ya llenos) y la abre en una pestaña nueva — el asesor solo da clic en Enviar desde su propia cuenta. No requiere conectar ninguna cuenta ni pedir permisos.
+Botón "✓ Marcar como enviado": registra el envío como un seguimiento real del lead (mismo mecanismo que ya usa el resto de la app — se ve en el historial y alimenta el badge de "próxima acción" en Kanban), con canal, próxima fecha de contacto (sugerida a 3 días, editable) y próxima acción (editable). Además avanza la etapa del lead automáticamente: a "Propuesta" al enviar la propuesta, a "Negociación" al enviar la cotización.
+Probado en vivo contra pmps-os.vercel.app.
+
+🔜 Pendiente — cerrado como sprint aparte (bloqueador externo, no es código): envío 100% automático vía Gmail API
+
+Pako decidió dejar esto para un sprint separado en vez de bloquear lo anterior. Lo que ya está construido ("Abrir en Gmail" + registro de seguimiento) cubre el ciclo completo hoy; lo que falta es que el envío salga solo, sin que el asesor dé clic.
+
+Qué falta técnicamente: un proyecto de Google Cloud con la Gmail API habilitada, una cuenta de servicio con "domain-wide delegation", y que el administrador de Google Workspace del dominio pmpsquimicos.com (confirmado que existe, pero no es Pako) autorice el Client ID de esa cuenta de servicio con el scope gmail.send desde admin.google.com → Seguridad → Controles de API → Delegación en todo el dominio. Es un paso único, de una sola pantalla, que cubre a los 8 usuarios de una vez — no requiere que cada quien autorice por separado.
+Lo que yo puedo dejar listo de una vez que se retome: crear el proyecto de Google Cloud y la cuenta de servicio, y redactar el mensaje exacto (con el Client ID y el scope) para mandarle a quien administra el Workspace.
+Una vez autorizado ese paso, el cambio en código es menor: una Edge Function en Supabase que use el token de la cuenta de servicio para mandar el correo por la Gmail API en nombre del asesor correspondiente, en vez de abrir la ventana de Gmail.
 
 ## Estado de fondo ya resuelto (no confundir con pendientes)
 
