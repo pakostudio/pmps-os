@@ -6057,11 +6057,14 @@ function renderCatPills(){
   }
   const datalist = document.getElementById('cat-familias-datalist')
   if(datalist) datalist.innerHTML = familias.map(f=>`<option value="${esc(f)}">`).join('')
+  const selColor = document.getElementById('cat-color')
+  if(selColor){
+    const prevColor = selColor.value
+    const colores = [...new Set(productos_cat.map(p=>p.color_clasificacion).filter(Boolean))].sort()
+    selColor.innerHTML = '<option value="">Todos los colores</option>' + colores.map(c=>`<option>${esc(c)}</option>`).join('')
+    selColor.value = colores.includes(prevColor) ? prevColor : ''
+  }
   const pills = document.getElementById('cat-pills-row')
-      const selColor = document.getElementById('cat-color')
-      if(selColor){
-              const prevColor = selColor.value
-              const colores = [...new Set(productos_cat.map(p=>p.color_clasificacion).filter(Boolean))].sort()
   if(!pills) return
   pills.innerHTML = ['Todas',...familias].map(f=>`
     <button onclick="catPillClick(this,'${f}')"
