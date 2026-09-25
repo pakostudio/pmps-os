@@ -2,7 +2,13 @@
 
 Objetivo: llevar PMPS CRM V2 al nivel de Salesforce/HubSpot/Monday en los puntos donde hoy nos quedamos cortos, para poder mostrarlo con orgullo a clientes potenciales y usarlo como diferenciador comercial.
 
-Última actualización: 2026-09-22.
+Última actualización: 2026-09-25.
+
+✅ Formato oficial de cotización recibido e integrado (2026-09-25)
+
+Pako compartió el formato oficial de cotización de la empresa: `DO-VE-03_Cotización - Terminos y condiciones de venta MENLUN_V1.docx`. Es un documento Word formal (con membrete de OPERADORA QUIMICA MENLUN S.A DE C.V.) con: datos de Cliente/Atención a/Fecha, una tabla de productos (Producto, Descripción, Cantidad, Precio por presentación, Subtotal, con SUBTOTAL y TOTAL + IVA 16% calculados), y 11 cláusulas de términos y condiciones de venta (pago/impuestos, incumplimiento, garantías, propiedad intelectual, limitación de responsabilidad, crédito, etc.).
+
+Se decidió (con Pako) integrarlo así: el correo de Cotización queda como una nota breve de acompañamiento (ya no dice "[Detalle de productos — completar antes de enviar]"), y el modal ahora recuerda adjuntar el documento oficial (Word o PDF, ya llenado con los precios de esa cotización) antes de dar clic en enviar desde Gmail. Se quitó el aviso de "plantilla provisional" porque ya no aplica — el formato oficial es el que se usa, solo que se adjunta manualmente en vez de generarse automáticamente dentro de la app (para no arriesgar el membrete/diseño legal del documento). Generar el documento automáticamente desde la app (autollenado de cliente/fecha/precios sobre una copia del Word oficial) queda como posible mejora futura, no pedida todavía.
 
 ✅ Ciclo comercial: envío de Propuesta y Cotización desde el lead (2026-09-22)
 
@@ -12,7 +18,7 @@ Qué se construyó:
 
 Botones "📧 Enviar Propuesta" y "📄 Enviar Cotización" en la ficha de cada lead (Mis Leads), junto al botón existente de "+ Registrar seguimiento".
 Modal que arma el correo automáticamente: destinatario (del lead), asunto y cuerpo con plantilla editable (nombre de contacto, empresa, y enlace a la carpeta de documentos), antes de enviarlo.
-Plantilla de Propuesta: enfocada en presentar productos/catálogo/ficha técnica. Plantilla de Cotización: placeholder provisional (marcado en el modal con un aviso) a reserva del formato oficial que use José Carlos — se reemplaza en cuanto lo comparta.
+Plantilla de Propuesta: enfocada en presentar productos/catálogo/ficha técnica. Plantilla de Cotización: nota breve de acompañamiento con recordatorio de adjuntar el documento oficial (ver sección de arriba, 2026-09-25).
 Carpeta de documentos (Drive) configurable en Administrador → 📁 Documentos: un solo enlace, guardado en pmps_config, que se inserta automáticamente en el cuerpo de ambos correos. Si no está configurada, el modal avisa en vez de fallar.
 Botón "📧 Abrir en Gmail": arma la URL de Gmail compose (destinatario, asunto y cuerpo ya llenos) y la abre en una pestaña nueva — el asesor solo da clic en Enviar desde su propia cuenta. No requiere conectar ninguna cuenta ni pedir permisos.
 Botón "✓ Marcar como enviado": registra el envío como un seguimiento real del lead (mismo mecanismo que ya usa el resto de la app — se ve en el historial y alimenta el badge de "próxima acción" en Kanban), con canal, próxima fecha de contacto (sugerida a 3 días, editable) y próxima acción (editable). Además avanza la etapa del lead automáticamente: a "Propuesta" al enviar la propuesta, a "Negociación" al enviar la cotización.

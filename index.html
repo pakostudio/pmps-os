@@ -1101,7 +1101,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <input type="hidden" id="envio-lead-id">
     <input type="hidden" id="envio-tipo">
     <div id="envio-carpeta-aviso" style="display:none;background:#FFF7E6;border:1px solid #F0D48A;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#8A6A1A">⚠️ La carpeta de documentos (Drive) todavía no está configurada. Pídele a un Administrador que la agregue en Administrador → 📁 Documentos.</div>
-    <div id="envio-plantilla-aviso" style="display:none;background:#EEF3FA;border:1px solid #C6D9EF;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#0C447C">ℹ️ Plantilla provisional — se actualizará cuando tengamos el formato oficial de cotización.</div>
+    <div id="envio-plantilla-aviso" style="display:none;background:#EEF3FA;border:1px solid #C6D9EF;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#0C447C">📎 No olvides adjuntar el documento de cotización (formato oficial DO-VE-03, Word o PDF) con los precios ya llenados antes de dar clic en enviar desde Gmail.</div>
     <label>Para (correo del cliente)</label>
     <input type="email" id="envio-para" placeholder="cliente@empresa.com">
     <label>Asunto</label>
@@ -2699,7 +2699,7 @@ function plantillaEnvioDoc(tipo, l){
   if(tipo==='cotizacion'){
     return {
       asunto: `Envío cotización — ${l.empresa||''}`,
-      cuerpo: `Estimado ${primerNombre},\n\nGracias por tu interés. Con gusto te comparto la cotización solicitada para ${l.empresa||'tu empresa'}.\n\n[Detalle de productos, cantidades y precios — completar antes de enviar]\n\n${anexo}\n\nQuedo atento a tus comentarios para continuar con el proceso.\n\nSaludos,\n${nombre}\nPMPS Menlun`
+      cuerpo: `Estimado ${primerNombre},\n\nGracias por tu interés. Adjunto te comparto la cotización formal para ${l.empresa||'tu empresa'}, con el detalle de productos, cantidades, precios y nuestras condiciones comerciales.\n\n${anexo}\n\nQuedo atento a tus comentarios para continuar con el proceso.\n\nSaludos,\n${nombre}\nPMPS Menlun`
     };
   }
   return {
